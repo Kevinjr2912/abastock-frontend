@@ -2,42 +2,42 @@
 
 **El control de tu tienda en tu bolsillo.**
 
-Abastock es una aplicacion movil Android disenada para que tenderos y duenos de abarrotes gestionen su negocio de forma rapida y sencilla desde su celular. Desarrollada con tecnologias modernas de Android, ofrece una experiencia fluida y una interfaz limpia orientada al mercado latinoamericano.
+Abastock es una aplicación móvil Android diseñada para que tenderos y dueños de abarrotes gestionen su negocio de forma rápida y sencilla desde su celular. Desarrollada con tecnologías modernas de Android, ofrece una experiencia fluida y una interfaz limpia orientada al mercado latinoamericano.
 
-## Caracteristicas
+## Características
 
-- **Registro de cuenta** - Crea tu perfil con nombre de tienda, datos de contacto y credenciales de acceso, con validacion en tiempo real.
-- **Inicio de sesion** - Accede con correo/telefono y contrasena, o mediante Google y Apple.
-- **Interfaz moderna** - UI construida con Jetpack Compose y Material 3, con gradientes, animaciones y componentes reutilizables.
+- **Registro de cuenta** — Crea tu perfil con nombre de tienda, datos de contacto y credenciales de acceso, con validación en tiempo real.
+- **Inicio de sesión** — Accede con correo/teléfono y contraseña, o mediante Google y Apple.
+- **Interfaz moderna** — UI construida con Jetpack Compose y Material 3, con gradientes, animaciones y componentes reutilizables.
 
-## Stack tecnologico
+## Stack tecnológico
 
-| Capa | Tecnologia |
+| Capa | Tecnología |
 |---|---|
 | Lenguaje | Kotlin |
 | UI | Jetpack Compose + Material 3 |
-| Inyeccion de dependencias | Hilt |
+| Inyección de dependencias | Hilt |
 | Base de datos local | Room |
 | Networking | Retrofit |
-| Carga de imagenes | Coil |
-| Navegacion | Navigation Compose |
+| Carga de imágenes | Coil |
+| Navegación | Navigation Compose |
 | Procesamiento de anotaciones | KSP |
-| Serializacion | Kotlin Serialization |
+| Serialización | Kotlin Serialization |
 
 ## Arquitectura
 
-El proyecto sigue una arquitectura basada en **features** con separacion por capas de presentacion:
+El proyecto sigue una arquitectura basada en **features** con separación por capas de presentación:
 
 ```
 app/src/main/java/com/softgenix/abastock/
 ├── core/
 │   ├── shared/components/   # Componentes reutilizables (Button, Header, StyledInput, InputLabel)
-│   └── ui/theme/            # Tema, colores y tipografia
+│   └── ui/theme/            # Tema, colores y tipografía
 ├── features/
 │   └── authentication/
 │       └── presentation/
 │           ├── screens/     # SignInScreen, SignUpScreen, SignUpSuccessScreen
-│           └── components/  # Componentes especificos de autenticacion
+│           └── components/  # Componentes específicos de autenticación
 └── MainActivity.kt
 ```
 
@@ -46,9 +46,9 @@ app/src/main/java/com/softgenix/abastock/
 - **Android Studio** Ladybug o superior
 - **JDK 21**
 - **Android SDK** con compileSdk 36
-- Dispositivo o emulador con **Android 8.0 (API 26)** como minimo
+- Dispositivo o emulador con **Android 8.0 (API 26)** como mínimo
 
-## Configuracion del proyecto
+## Configuración del proyecto
 
 1. Clona el repositorio:
    ```bash
@@ -57,12 +57,12 @@ app/src/main/java/com/softgenix/abastock/
 
 2. Abre el proyecto en Android Studio.
 
-3. Crea un archivo `local.properties` en la raiz del proyecto (si no existe) y agrega la ruta de tu SDK:
+3. Crea un archivo `local.properties` en la raíz del proyecto (si no existe) y agrega la ruta de tu SDK:
    ```properties
    sdk.dir=/ruta/a/tu/Android/Sdk
    ```
 
-4. Sincroniza Gradle y ejecuta la aplicacion en un emulador o dispositivo fisico.
+4. Sincroniza Gradle y ejecuta la aplicación en un emulador o dispositivo físico.
 
 ## Compilar desde terminal
 
@@ -70,7 +70,7 @@ app/src/main/java/com/softgenix/abastock/
 ./gradlew assembleDebug
 ```
 
-El APK generado se encontrara en `app/build/outputs/apk/debug/`.
+El APK generado se encontrará en `app/build/outputs/apk/debug/`.
 
 ## Equipo
 
