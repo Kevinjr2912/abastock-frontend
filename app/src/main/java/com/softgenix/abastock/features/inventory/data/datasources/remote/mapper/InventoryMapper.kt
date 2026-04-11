@@ -32,6 +32,7 @@ fun InventoryDto.toDomain(): InventoryItem {
 fun InventoryScanResponse.toDomain(): ScannedProduct {
     return ScannedProduct(
         id = this.inventory_id,
+        presentationId = this.presentation_id ?: "",
         productName = this.product_name,
         brandName = this.brand_name,
         categoryName = this.category_name,

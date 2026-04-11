@@ -53,7 +53,8 @@ fun InventoryListItem(
             modifier = Modifier.fillMaxWidth()
         ) {
             Surface(
-                modifier = Modifier.size(75.dp),
+                modifier = Modifier.size(75.dp)
+                    .padding(end = 10.dp),
                 shape = RoundedCornerShape(16.dp),
                 color = Color(0xFFF8F9FB)
             ) {
