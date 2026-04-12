@@ -1,14 +1,20 @@
 package com.softgenix.abastock.features.inventory.presentation.screens
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -21,20 +27,47 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil.compose.AsyncImage
 import com.softgenix.abastock.R
 import com.softgenix.abastock.core.shared.components.InputLabel
 import com.softgenix.abastock.core.shared.components.StyledInput
 import com.softgenix.abastock.core.ui.theme.TextSec
+import com.softgenix.abastock.features.inventory.presentation.components.BrandDropdown
+import com.softgenix.abastock.features.inventory.presentation.components.CategoryDropdown
+import com.softgenix.abastock.features.inventory.presentation.viewmodels.CreateProductViewModel
 
 @Composable
-fun CreateProductScreen() {
+fun CreateProductScreen(
+    barcode: String,
+    onProductCreated: (String) -> Unit,
+    viewModel: CreateProductViewModel = hiltViewModel()
+) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
     val colorScheme = MaterialTheme.colorScheme
+
+    LaunchedEffect(state.isSuccess) {
+        if (state.isSuccess) {
+            onProductCreated(barcode)
+        }
+    }
+
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { viewModel.onImageSelected(it) }
+    }
+
 
     Column(
         modifier = Modifier
@@ -45,29 +78,40 @@ fun CreateProductScreen() {
     ) {
         // img y seccion
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 24.dp),
+            modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Box(contentAlignment = Alignment.BottomEnd) {
                 Surface(
-                    modifier = Modifier.size(130.dp),
+                    modifier = Modifier
+                        .size(130.dp)
+                        .clickable { galleryLauncher.launch("image/*") },
                     shape = RoundedCornerShape(24.dp),
                     color = Color.White,
                     shadowElevation = 2.dp
                 ) {
-                    Icon(
-                        Icons.Default.Inventory,
-                        contentDescription = null,
-                        tint = colorScheme.onBackground.copy(alpha = 0.2f),
-                        modifier = Modifier.padding(35.dp)
-                    )
+                    if (state.selectedImageUri != null) {
+                        AsyncImage(
+                            model = state.selectedImageUri,
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Icon(
+                            Icons.Default.Inventory,
+                            contentDescription = null,
+                            tint = colorScheme.onBackground.copy(alpha = 0.2f),
+                            modifier = Modifier.padding(35.dp)
+                        )
+
+                    }
                 }
             }
             Spacer(Modifier.height(12.dp))
+
             Text(
-                text = "Código del producto: 123456789",
+                text = "Código del producto: $barcode",
                 color = TextSec,
                 fontSize = 13.sp,
                 modifier = Modifier.padding(top = 2.dp)
@@ -91,44 +135,52 @@ fun CreateProductScreen() {
 
                 InputLabel("Nombre")
                 StyledInput(
-                    value = "Sabritas Adobadas 45g",
+                    value = state.name,
                     placeholder = "name",
-                    onValueChange = {},
+                    onValueChange = viewModel::onNameChange,
                     leadingIconRes = R.drawable.name_icon,
-                    readOnly = true
                 )
 
                 Spacer(Modifier.height(12.dp))
 
                 InputLabel("Marca / Fabricante")
-                StyledInput(
-                    value = "Sabritas",
-                    placeholder = "Marca",
-                    onValueChange = {},
-                    leadingIconRes = R.drawable.marca_icon,
-                    readOnly = true
+                BrandDropdown(
+                    selectedBrand = state.selectedBrand,
+                    brands = state.brands,
+                    onBrandSelected = viewModel::onBrandSelect
                 )
+
 
                 Spacer(Modifier.height(12.dp))
 
                 InputLabel("Presentación")
-                StyledInput(
-                    value = "Bolsa 45 g",
-                    placeholder = "presentation",
-                    onValueChange = {},
-                    leadingIconRes = R.drawable.presentation_icon,
-                    readOnly = true
-                )
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        StyledInput(
+                            value = state.value, // "1"
+                            placeholder = "Cant.",
+                            onValueChange = { viewModel.onValueChange(it) },
+                            leadingIconRes = R.drawable.presentation_icon,
 
-                Spacer(Modifier.height(12.dp))
+                        )
+                    }
+                    Spacer(Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        StyledInput(
+                            value = state.unit,
+                            placeholder = "Unidad",
+                            onValueChange = { viewModel.onUnitChange(it) },
+                            leadingIconRes = R.drawable.presentation_icon,
+                        )
+                    }
+                }
+
 
                 InputLabel("Categoría")
-                StyledInput(
-                    value = "Sabritas",
-                    placeholder = "Category",
-                    onValueChange = {},
-                    leadingIconRes = R.drawable.category_icon,
-                    readOnly = true
+                CategoryDropdown(
+                    selectedCategory = state.selectedCategory,
+                    categories = state.categories,
+                    onCategorySelected = viewModel::onCategorySelect
                 )
             }
         }
@@ -136,7 +188,7 @@ fun CreateProductScreen() {
         Spacer(Modifier.height(16.dp))
 
         Button(
-            onClick = { },
+            onClick = {viewModel.saveProduct(barcode)},
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(24.dp)

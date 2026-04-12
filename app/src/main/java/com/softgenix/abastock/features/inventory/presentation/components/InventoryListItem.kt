@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -36,6 +37,7 @@ fun InventoryListItem(
     price: Double,
     stock: Int,
     category: String,
+    imageUrl: String? = null,
     maxStock: Int = 50
 ) {
     //hay se lo pongo dps en el viewmodel
@@ -55,18 +57,27 @@ fun InventoryListItem(
                 shape = RoundedCornerShape(16.dp),
                 color = Color(0xFFF8F9FB)
             ) {
-                // lo del async de l aimg
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        Icons.Default.Inventory,
-                        contentDescription = null,
-                        tint = Color.LightGray,
-                        modifier = Modifier.size(30.dp)
-                    )
+                coil.compose.AsyncImage(
+                    model = imageUrl,
+                    contentDescription = name,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                    error = androidx.compose.ui.graphics.painter.ColorPainter(Color(0xFFF8F9FB)),
+                    fallback = androidx.compose.ui.graphics.painter.ColorPainter(Color(0xFFF8F9FB))
+                )
+
+
+                if (imageUrl == null) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            Icons.Default.Inventory,
+                            contentDescription = null,
+                            tint = Color.LightGray,
+                            modifier = Modifier.size(30.dp)
+                        )
+                    }
                 }
             }
-
-            Spacer(Modifier.width(16.dp))
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(

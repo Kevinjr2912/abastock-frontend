@@ -24,7 +24,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -33,15 +32,19 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.softgenix.abastock.R
+import com.softgenix.abastock.core.navigation.Inventory
 
+import androidx.navigation.NavDestination.Companion.hasRoute
+import com.softgenix.abastock.core.navigation.Cart
+import com.softgenix.abastock.core.navigation.Home
+import com.softgenix.abastock.core.navigation.PurchaseScanner
 
 @Composable
 fun AbastockBottomBar(
     navController: NavController
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
-
+    val currentDestination = navBackStackEntry?.destination
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -64,15 +67,21 @@ fun AbastockBottomBar(
                 BottomNavItem(
                     label = "Inicio",
                     icon = R.drawable.ic_home,
-                    isSelected = currentRoute == "home",
-                    onClick = { navController.navigate("home") }
+                    isSelected = currentDestination?.hasRoute<Home>() == true,
+                    onClick = {
+                        navController.navigate(Home) {
+                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
                 )
 
                 BottomNavItem(
                     label = "Ventas",
                     icon = R.drawable.ic_ventas,
-                    isSelected = currentRoute == "sales",
-                    onClick = { navController.navigate("sales") }
+                    isSelected = false,
+                    onClick = { }
                 )
 
                 Spacer(modifier = Modifier.weight(1f))
@@ -80,15 +89,21 @@ fun AbastockBottomBar(
                 BottomNavItem(
                     label = "Inventario",
                     icon = R.drawable.ic_inventory,
-                    isSelected = currentRoute == "inventory",
-                    onClick = { navController.navigate("inventory") }
+                    isSelected = currentDestination?.hasRoute<Inventory>() == true,
+                    onClick = {
+                        navController.navigate(Inventory) {
+                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
                 )
 
                 BottomNavItem(
                     label = "Perfil",
                     icon = R.drawable.ic_profile,
-                    isSelected = currentRoute == "profile",
-                    onClick = { navController.navigate("profile") }
+                    isSelected = false,
+                    onClick = {  }
                 )
             }
         }
@@ -97,7 +112,7 @@ fun AbastockBottomBar(
             modifier = Modifier
                 .offset(y = (-32.dp))
                 .size(64.dp)
-                .clickable { navController.navigate("scanner") },
+                .clickable { navController.navigate(Cart) },
             shape = CircleShape,
             color = Color(0xFF0F1C2E),
             shadowElevation = 10.dp

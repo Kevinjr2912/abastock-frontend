@@ -1,6 +1,7 @@
-package com.softgenix.abastock.features.inventory.presentation.screens
+package com.softgenix.abastock.features.purchases.presentation.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,43 +21,68 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
 import com.softgenix.abastock.R
+import com.softgenix.abastock.core.hardware.domain.ScannerManager
 import com.softgenix.abastock.core.ui.theme.AccentGold
 import com.softgenix.abastock.core.ui.theme.BlueStrong
 import com.softgenix.abastock.core.ui.theme.InputBg
 import com.softgenix.abastock.core.ui.theme.NavyMid
+import com.softgenix.abastock.core.ui.theme.Surface
 import com.softgenix.abastock.core.ui.theme.TextPrim
 import com.softgenix.abastock.core.ui.theme.TextSec
 import com.softgenix.abastock.core.ui.theme.WhitePure
+import com.softgenix.abastock.features.purchases.domain.entities.PurchaseItem
+import com.softgenix.abastock.features.purchases.presentation.components.CameraPreview
+import com.softgenix.abastock.features.purchases.presentation.viewmodels.PurchaseViewModel
+import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun PurchaseScannerScreen(
-    onBarcodeDetected: (String) -> Unit,
-    onBackClick: () -> Unit
+    viewModel: PurchaseViewModel = hiltViewModel(),
+    scannerManager: ScannerManager,
+    onNavigateToCreate: (String) -> Unit,
+    onNavigateToExisting: (String) -> Unit
+
 ) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    val cameraPermissionState = rememberPermissionState(android.Manifest.permission.CAMERA)
+    val scope = rememberCoroutineScope()
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+
+    LaunchedEffect(Unit) {
+        if (!cameraPermissionState.status.isGranted) {
+            cameraPermissionState.launchPermissionRequest()
+        }
+    }
+
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(com.softgenix.abastock.core.ui.theme.Surface)
+        modifier = Modifier.fillMaxSize().background(Surface)
     ) {
         Box(
             modifier = Modifier
@@ -66,12 +92,24 @@ fun PurchaseScannerScreen(
                 .clip(RoundedCornerShape(24.dp))
                 .background(BlueStrong)
         ) {
+            if (cameraPermissionState.status.isGranted) {
+                CameraPreview(
+                    scannerManager = scannerManager,
+                    onBarcodeDetected = { code ->
+                        viewModel.onBarcodeScanned(
+                            barcode = code,
+                            onExists = { product -> onNavigateToExisting(product.barcode) },
+                            onNotFound = { barcode -> onNavigateToCreate(barcode) }
+                        )
+                    }
+                )
+            }
+
             Column(
                 modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-
                 Icon(
                     painter = painterResource(id = R.drawable.ic_scanner_frame),
                     contentDescription = null,
@@ -80,10 +118,12 @@ fun PurchaseScannerScreen(
                 )
                 Spacer(Modifier.height(16.dp))
                 Text(
-                    text = "Enfoca el código de barras",
+                    text = if (cameraPermissionState.status.isGranted)
+                        "Enfoca el código de barras" else "Sin permiso de cámara",
                     color = Color.White.copy(alpha = 0.7f),
                     fontSize = 14.sp
                 )
+
             }
         }
 
@@ -94,13 +134,17 @@ fun PurchaseScannerScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Button(
-                onClick = {  },
+                onClick = {
+                    if (cameraPermissionState.status.isGranted) {
+                    } else {
+                        cameraPermissionState.launchPermissionRequest()
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
                 shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = NavyMid)
-            ) {
+                colors = ButtonDefaults.buttonColors(containerColor = NavyMid) ){
                 Icon(Icons.Default.PhotoCamera, contentDescription = null)
                 Spacer(Modifier.width(12.dp))
                 Text("Escanear Ahora", fontWeight = FontWeight.Bold)
@@ -185,4 +229,17 @@ fun PurchaseScannerScreen(
             )
         }
     }
+
+    if (state.isLoading) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.4f))
+                .clickable(enabled = false) { },
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(color = AccentGold)
+        }
+    }
+
 }

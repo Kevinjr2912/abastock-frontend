@@ -1,4 +1,4 @@
-package com.softgenix.abastock.features.inventory.presentation.screens
+package com.softgenix.abastock.features.purchases.presentation.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -36,7 +36,7 @@ import com.softgenix.abastock.core.ui.theme.TextSec
 
 @Composable
 fun PurchaseEmptyCartScreen(
-    onScanClick: () -> Unit
+    onNavigateToScanner: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -83,7 +83,7 @@ fun PurchaseEmptyCartScreen(
         Spacer(Modifier.height(48.dp))
 
         Button(
-            onClick = onScanClick,
+            onClick = onNavigateToScanner,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(58.dp),
