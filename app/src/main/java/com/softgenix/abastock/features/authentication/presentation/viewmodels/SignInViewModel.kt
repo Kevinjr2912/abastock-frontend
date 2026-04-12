@@ -28,23 +28,18 @@ class SignInViewModel @Inject constructor(
 
     fun onSignIn() {
         val current = _state.value
-
         val credential = current.credential.trim()
 
         val isEmail = credential.contains("@")
 
         if (isEmail) {
             if (!isValidGmail(credential)) {
-                _state.update {
-                    it.copy(error = "Solo se permiten correos Gmail")
-                }
+                _state.update { it.copy(error = "Solo se permiten correos Gmail") }
                 return
             }
         } else {
             if (!isValidPhone(credential)) {
-                _state.update {
-                    it.copy(error = "El número debe tener 10 dígitos")
-                }
+                _state.update { it.copy(error = "El número debe tener 10 dígitos") }
                 return
             }
         }
@@ -58,8 +53,14 @@ class SignInViewModel @Inject constructor(
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }
 
+            // 🔥 LOG 1: Vemos qué estamos a punto de mandar
+            android.util.Log.d("AUTH_DEBUG", "🚀 Intentando Login -> Credencial: $credential, Pass: ${current.password}")
+
             loginUseCase(credentials)
                 .onSuccess { tokens ->
+                    // 🔥 LOG 2: Si jala, vemos que llegaron los tokens
+                    android.util.Log.d("AUTH_DEBUG", "✅ ¡Login Exitoso! AccessToken: ${tokens.accessToken.take(10)}...")
+
                     tokenManager.saveTokens(tokens.accessToken, tokens.refreshToken)
 
                     _state.update {
@@ -69,11 +70,15 @@ class SignInViewModel @Inject constructor(
                         )
                     }
                 }
-                .onFailure {
+                .onFailure { error ->
+                    // 🔥 LOG 3: El chismoso principal. Aquí veremos si es 401, 404, o si tronó la red
+                    android.util.Log.e("AUTH_DEBUG", "❌ Valió queso el login: ${error.message}", error)
+
                     _state.update {
                         it.copy(
                             isLoading = false,
-                            error = "Credenciales inválidas"
+                            // Mostramos el error real en la pantalla un ratito para depurar
+                            error = "Error del Back: ${error.message ?: "Desconocido"}"
                         )
                     }
                 }

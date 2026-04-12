@@ -42,3 +42,4 @@ data class AddToCart (val barcode: String)
 @Serializable object Cart
 @Serializable object ProductPicker
 @Serializable data class Success(val total: Double)
+@Serializable object SalesHistory
