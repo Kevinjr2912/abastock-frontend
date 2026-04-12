@@ -73,28 +73,19 @@ class SupplyViewModel @Inject constructor(
                         inventoryId = item.inventoryId,
                         quantity = item.quantity.toInt(),
                         costPrice = item.costPrice,
-                        salePrice = item.salePrice
+                        salePrice = item.salePrice,
+                        name = item.name,
+                        brand = item.brand,
+                        imageUrl = item.imageUrl
                     )
                 }
             )
-            android.util.Log.d("DEBUG_ABA_BACKEND", "PurchaseID: ${transaction.transactionId}")
-
-            transaction.items.forEachIndexed { index, item ->
-                if (item.presentationId.isBlank()) {
-                    android.util.Log.e("DEBUG_ABA_BACKEND", " El Item $index tiene presentationId VACÍO")
-                }
-                if (item.inventoryId.isBlank()) {
-                    android.util.Log.e("DEBUG_ABA_BACKEND", " El Item $index tiene inventoryId VACÍO")
-                }
-                android.util.Log.d("DEBUG_ABA_BACKEND", "Item[$index] -PresID: '${item.presentationId}', InvID: '${item.inventoryId}'")
-            }
 
             confirmPurchaseUseCase(transaction).fold(
                 onSuccess = {
                     _uiState.update { it.copy(isLoading = false, isSuccess = true) }
                 },
                 onFailure = { error ->
-                    android.util.Log.e("DEBUG_ABA_BACKEND", "Error recibido del Back: ${error.message}")
                     _uiState.update { it.copy(isLoading = false, error= error.message) }
                 }
             )
