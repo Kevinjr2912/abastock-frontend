@@ -8,6 +8,9 @@ plugins {
     // Activa Hilt y KSP
     alias(libs.plugins.devtools.ksp)
     alias(libs.plugins.hilt.android)
+
+    // Firebase: Activa Google Services
+    alias(libs.plugins.google.services)
 }
 
 
@@ -98,6 +101,9 @@ dependencies {
 
     implementation(libs.accompanist.systemuicontroller)
 
+    // Firebase
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.analytics)
     //Hardware
     implementation(libs.accompanist.permissions)
 
