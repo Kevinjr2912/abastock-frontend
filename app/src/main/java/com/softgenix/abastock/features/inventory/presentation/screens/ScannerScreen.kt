@@ -106,7 +106,7 @@ fun ScannerScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             Button(
-                onClick = {navController.navigate(CreateProduct)},
+                onClick = {navController.navigate(CreateProduct())},
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(60.dp),

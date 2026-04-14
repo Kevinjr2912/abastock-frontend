@@ -19,7 +19,7 @@ class HomeNavGraph: FeatureNavGraph {
                     navController.navigate(PurchaseEmptyCart) //aun no estaaaa
                 },
                 onNavigateToAddProducts = {
-                    navController.navigate(CreateProduct)
+                    navController.navigate(CreateProduct())
                 },
                 onNavigateToInventory = {
                     navController.navigate(Inventory)

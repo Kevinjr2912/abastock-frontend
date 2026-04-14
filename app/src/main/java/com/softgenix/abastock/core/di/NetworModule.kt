@@ -1,6 +1,7 @@
 package com.softgenix.abastock.core.di
 
 import com.softgenix.abastock.core.data.local.TokenManager
+import com.softgenix.abastock.core.data.local.SessionEventBus
 import com.softgenix.abastock.core.data.remote.api.RefreshTokenApi
 import com.softgenix.abastock.core.data.remote.interceptor.AuthInterceptor
 import dagger.Module
@@ -16,7 +17,7 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    private const val BASE_URL = "http://172.20.10.2:3000/api/v1/"
+    private const val BASE_URL = "http://10.0.2.2:3000/api/v1/" // "http://172.20.10.2:3000/api/v1/"
 
     // Sin interceptor (solo para auth y refresh)
     @Provides
@@ -39,9 +40,10 @@ object NetworkModule {
     @Singleton
     fun provideAuthInterceptor(
         tokenManager: TokenManager,
-        refreshTokenApi: RefreshTokenApi
+        refreshTokenApi: RefreshTokenApi,
+        sessionEventBus: SessionEventBus
     ): AuthInterceptor {
-        return AuthInterceptor(tokenManager, refreshTokenApi)
+        return AuthInterceptor(tokenManager, refreshTokenApi, sessionEventBus)
     }
 
     // Con interceptor (para el resto de la app)

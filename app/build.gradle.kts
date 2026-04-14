@@ -2,10 +2,10 @@ import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.secrets.gradle)
     alias(libs.plugins.jetbrainsKotlinSerialization)
-    // Activa Hilt y KSP
     alias(libs.plugins.devtools.ksp)
     alias(libs.plugins.hilt.android)
 }
@@ -20,12 +20,12 @@ if (localPropertiesFile.exists()) {
 
 android {
     namespace = "com.softgenix.abastock"
-    compileSdk = 36
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.softgenix.abastock"
         minSdk = 26
-        targetSdk = 36
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -53,12 +53,15 @@ android {
 
 secrets {
     propertiesFileName = "local.properties"
-    // defaultPropertiesFileName = "local.defaults.properties"
     ignoreList.add("sdk.dir")
 }
 
 ksp {
     arg("hilt.disableModulesHaveInstallInCheck", "true")
+}
+
+hilt {
+    enableAggregatingTask = true
 }
 
 kotlin {
@@ -78,31 +81,30 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
 
-    implementation(libs.androidx.compose.ui.text.google.fonts)      // G Fonts
-    implementation(libs.androidx.lifecycle.viewmodel.compose)       // viewModel()
-    implementation(libs.com.squareup.retrofit2.retrofit)            // Retrofit
-    implementation(libs.com.squareup.retrofit2.converter.json)      // JSON
-    implementation(libs.io.coil.kt.coil.compose)                    // Coil
-    implementation(libs.androidx.navigation.compose)                // Navigation
-    implementation(libs.androidx.compose.material.icons.extended)   // Icons extendend
+    implementation(libs.androidx.compose.ui.text.google.fonts)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.com.squareup.retrofit2.retrofit)
+    implementation(libs.com.squareup.retrofit2.converter.json)
+    implementation(libs.io.coil.kt.coil.compose)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.compose.material.icons.extended)
 
-    //workmanager
+    // WorkManager
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.hilt.work)
+    ksp(libs.androidx.hilt.compiler)
 
     // Hilt
     implementation(libs.hilt.android)
-    implementation(libs.hilt.navigation.compose)                    // Integración con Jetpack Compose
-    ksp(libs.hilt.compiler)                                         // Importante usar KSP
+    implementation(libs.hilt.navigation.compose)
+    ksp(libs.hilt.compiler)
 
     // Room
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
-    ksp(libs.room.compiler)                                         // Importante usar KSP
+    ksp(libs.room.compiler)
 
     implementation(libs.accompanist.systemuicontroller)
-
-    //Hardware
     implementation(libs.accompanist.permissions)
 
     // CameraX
@@ -111,11 +113,15 @@ dependencies {
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
 
-// ML Kit
+    // ML Kit
     implementation(libs.google.mlkit.barcode.scanning)
 
-// Utils
+    // Serialization
+    implementation(libs.kotlinx.serialization.json)
+
+    // Utils
     implementation(libs.guava)
+
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

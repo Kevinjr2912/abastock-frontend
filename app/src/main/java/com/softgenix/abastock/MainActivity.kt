@@ -16,18 +16,22 @@ import com.softgenix.abastock.features.authentication.navigation.AuthNavGraph
 import com.softgenix.abastock.features.authentication.presentation.screens.SignUpScreen
 import com.softgenix.abastock.features.inventory.navigation.InventoryNavGraph
 import com.softgenix.abastock.features.authentication.presentation.screens.SignUpSuccessScreen
+import com.softgenix.abastock.core.data.local.TokenManager
+import com.softgenix.abastock.core.data.local.SessionEventBus
+import com.softgenix.abastock.core.navigation.Home
+import com.softgenix.abastock.core.navigation.Login
 import dagger.hilt.android.AndroidEntryPoint
-import com.softgenix.abastock.core.navigation.NavigationWrapper
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     @Inject lateinit var purchasesGraph: PurchasesNavGraph
+    @Inject lateinit var tokenManager: TokenManager
+    @Inject lateinit var sessionEventBus: SessionEventBus
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-
 
         val navGraphs = listOf(
             InventoryNavGraph(),
@@ -36,6 +40,8 @@ class MainActivity : ComponentActivity() {
             purchasesGraph,
             SalesNavGraph()
         )
+
+        val startDestination = if (tokenManager.getAccessToken() != null) Home else Login
 
         setContent {
             val systemUiController = rememberSystemUiController()
@@ -46,11 +52,13 @@ class MainActivity : ComponentActivity() {
                 )
             }
 
-            AbastockTheme() {
+            AbastockTheme {
                 NavigationWrapper(
                     navGraphs = navGraphs,
+                    startDestination = startDestination,
+                    sessionEventBus = sessionEventBus
                 )
             }
         }
     }
-}
+}
