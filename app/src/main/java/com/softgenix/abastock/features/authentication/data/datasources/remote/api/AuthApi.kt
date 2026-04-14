@@ -10,14 +10,12 @@ import retrofit2.http.POST
 
 interface AuthApi {
 
-
-
         @POST("auth/sign-up")
         suspend fun registerUser(
             @Body user: RegisterUser
         ): Result<Unit>
 
-        // 🔥 Usamos Response<> para poder leer el 401 si falla
+
         @POST("auth/sign-in")
         suspend fun login(@Body credentials: LoginCredentialsDto): Response<AuthTokensDto>
     }

@@ -53,13 +53,8 @@ class SignInViewModel @Inject constructor(
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }
 
-            // 🔥 LOG 1: Vemos qué estamos a punto de mandar
-            android.util.Log.d("AUTH_DEBUG", "🚀 Intentando Login -> Credencial: $credential, Pass: ${current.password}")
-
             loginUseCase(credentials)
                 .onSuccess { tokens ->
-                    // 🔥 LOG 2: Si jala, vemos que llegaron los tokens
-                    android.util.Log.d("AUTH_DEBUG", "✅ ¡Login Exitoso! AccessToken: ${tokens.accessToken.take(10)}...")
 
                     tokenManager.saveTokens(tokens.accessToken, tokens.refreshToken)
 
@@ -71,13 +66,10 @@ class SignInViewModel @Inject constructor(
                     }
                 }
                 .onFailure { error ->
-                    // 🔥 LOG 3: El chismoso principal. Aquí veremos si es 401, 404, o si tronó la red
-                    android.util.Log.e("AUTH_DEBUG", "❌ Valió queso el login: ${error.message}", error)
 
                     _state.update {
                         it.copy(
                             isLoading = false,
-                            // Mostramos el error real en la pantalla un ratito para depurar
                             error = "Error del Back: ${error.message ?: "Desconocido"}"
                         )
                     }

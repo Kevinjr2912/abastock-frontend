@@ -29,14 +29,13 @@ import com.softgenix.abastock.core.ui.theme.Surface
 @Composable
 fun SalesHistoryScreen(
     onNavigateBack: () -> Unit,
-    onNavigateToNewSale: () -> Unit // Para el botón flotante o menú de abajo
+    onNavigateToNewSale: () -> Unit
 ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(NavyMid) // El fondo azul marino del diseño
+            .background(NavyMid)
     ) {
-        // 1. Header (Ventas + Botón Descargar)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -51,7 +50,7 @@ fun SalesHistoryScreen(
                 Text("Ventas", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 22.sp)
             }
             IconButton(
-                onClick = { /* TODO: Descargar reporte */ },
+                onClick = { /* TOD */ },
                 modifier = Modifier
                     .clip(CircleShape)
                     .background(Color.White.copy(alpha = 0.2f))
@@ -60,7 +59,6 @@ fun SalesHistoryScreen(
             }
         }
 
-        // 2. Tabs (Hoy, Semana, Mes) - Versión Mock
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -81,7 +79,6 @@ fun SalesHistoryScreen(
             ) {
                 Text("Hoy", color = NavyMid, fontWeight = FontWeight.Bold)
             }
-            // Los otros inactivos
             Box(modifier = Modifier.weight(1f).padding(vertical = 10.dp), contentAlignment = Alignment.Center) {
                 Text("Semana", color = Color.White)
             }
@@ -90,13 +87,11 @@ fun SalesHistoryScreen(
             }
         }
 
-        // 3. Total del día
         Column(modifier = Modifier.padding(24.dp)) {
             Text("Total del día", color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("$404.00", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 36.sp)
                 Spacer(modifier = Modifier.width(12.dp))
-                // Pill verde de porcentaje
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(12.dp))
@@ -108,18 +103,16 @@ fun SalesHistoryScreen(
             }
         }
 
-        // 4. White Sheet Background para la lista
         Surface(
             modifier = Modifier
                 .fillMaxSize()
                 .clip(RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)),
-            color = Color(0xFFF8F9FA) // Un gris muy clarito casi blanco
+            color = Color(0xFFF8F9FA)
         ) {
             LazyColumn(
                 modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Encabezado de la lista
                 item {
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
@@ -128,7 +121,7 @@ fun SalesHistoryScreen(
                     ) {
                         Text("5 transacciones", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                         OutlinedButton(
-                            onClick = { /* TODO: Filtros */ },
+                            onClick = { /* TODO */ },
                             shape = RoundedCornerShape(12.dp),
                             contentPadding = PaddingValues(horizontal = 12.dp)
                         ) {
@@ -139,7 +132,6 @@ fun SalesHistoryScreen(
                     }
                 }
 
-                // Lista de transacciones Mock
                 items(5) { index ->
                     TransactionItemMock(index = index)
                 }
@@ -148,10 +140,9 @@ fun SalesHistoryScreen(
     }
 }
 
-// Componente para cada Tarjeta de Venta
 @Composable
 fun TransactionItemMock(index: Int) {
-    var expanded by remember { mutableStateOf(index == 0) } // El primero empieza expandido para probar
+    var expanded by remember { mutableStateOf(index == 0) }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -160,7 +151,6 @@ fun TransactionItemMock(index: Int) {
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            // Fila principal siempre visible
             Row(
                 modifier = Modifier.fillMaxWidth().clickable { expanded = !expanded },
                 verticalAlignment = Alignment.CenterVertically
@@ -187,14 +177,13 @@ fun TransactionItemMock(index: Int) {
                 )
             }
 
-            // Detalle expandible
+            //  expandible
             AnimatedVisibility(visible = expanded) {
                 Column(modifier = Modifier.padding(top = 16.dp)) {
                     HorizontalDivider(color = Color(0xFFF0F4F8))
                     Spacer(modifier = Modifier.height(8.dp))
                     Text("Detalle de la venta", color = Color.Gray, fontSize = 12.sp, fontWeight = FontWeight.Bold)
 
-                    // Producto 1
                     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                         Box(modifier = Modifier.size(32.dp).background(Color.LightGray, RoundedCornerShape(8.dp))) // Placeholder imagen
                         Spacer(Modifier.width(8.dp))
@@ -203,7 +192,6 @@ fun TransactionItemMock(index: Int) {
                         Spacer(Modifier.width(16.dp))
                         Text("$30.00", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     }
-                    // Producto 2
                     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                         Box(modifier = Modifier.size(32.dp).background(Color.LightGray, RoundedCornerShape(8.dp))) // Placeholder imagen
                         Spacer(Modifier.width(8.dp))

@@ -17,7 +17,6 @@ data class SaleTransactionItem(
     val subtotal: Double
 )
 
-// --- PARA RECIBIR EL HISTORIAL (GET) ---
 data class DailySalesData(
     val totalRevenue: Double,
     val transactionCount: Int,
