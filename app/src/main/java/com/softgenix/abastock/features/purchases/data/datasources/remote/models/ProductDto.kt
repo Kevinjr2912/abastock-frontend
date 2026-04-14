@@ -7,7 +7,8 @@ data class ProductDto(
     val categoryName: String,
     val currentStock: Double,
     val salePrice: Double,
-    val presentationId: String
+    val presentationId: String,
+    val inventoryId: String,
 )
 
 data class PurchaseRequestDto(

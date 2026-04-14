@@ -231,9 +231,9 @@ fun AddToCartScreen(
 
                     val item =
                         com.softgenix.abastock.features.purchases.domain.entities.SupplyTransactionItem(
-                            itemId = "",
-                            presentationId = "",
-                            inventoryId = "",
+                            itemId = java.util.UUID.randomUUID().toString(),
+                            presentationId = product.presentationId,
+                            inventoryId = product.id,
                             quantity = qty,
                             costPrice = cost,
                             salePrice = sale,

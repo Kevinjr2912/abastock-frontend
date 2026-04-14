@@ -1,5 +1,6 @@
 package com.softgenix.abastock.features.inventory.presentation.screens
 
+import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -16,6 +17,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -55,6 +58,10 @@ fun InventoryScreen(
     viewModel: InventoryViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    val notificationPermissionState = rememberPermissionState(
+        permission = "android.permission.POST_NOTIFICATIONS"
+    )
 
     //para pedir permiso del micro
     val permissionState = rememberPermissionState(
@@ -126,6 +133,24 @@ fun InventoryScreen(
                 .background(MaterialTheme.colorScheme.background),
             contentPadding = PaddingValues(10.dp)
         ) {
+
+            item {
+                Button(
+                    onClick = {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !notificationPermissionState.status.isGranted) {
+                            notificationPermissionState.launchPermissionRequest()
+                        } else {
+                            viewModel.triggerManualReport()
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                ) {
+                    Text("Generar PDF de reporte", color = Color.White)
+                }
+            }
 
             if (state.isLoading) {
                 item {

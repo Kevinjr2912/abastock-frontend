@@ -2,6 +2,10 @@ package com.softgenix.abastock.features.inventory.data.repositories
 
 import android.content.Context
 import com.google.gson.Gson
+import com.softgenix.abastock.core.database.dao.InventoryDao
+import com.softgenix.abastock.features.inventory.data.datasources.local.mapper.toDomain
+import com.softgenix.abastock.features.inventory.data.datasources.local.mapper.toLocalEntity
+import com.softgenix.abastock.features.inventory.data.datasources.local.mapper.toScannedProduct
 import com.softgenix.abastock.features.inventory.data.datasources.remote.api.InventoryApi
 import com.softgenix.abastock.features.inventory.data.datasources.remote.mapper.toDomain
 import com.softgenix.abastock.features.inventory.data.datasources.remote.mapper.toDto
@@ -22,15 +26,32 @@ import javax.inject.Inject
 
 class InventoryRepositoryImpl @Inject constructor(
     private val api: InventoryApi,
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val inventoryDao: InventoryDao
 ) : InventoryRepository {
 
     override suspend fun getInventory(storeId: String): Result<List<InventoryItem>> {
         return try {
             val response = api.getInventory(storeId)
-            Result.success(response.map { it.toDomain() })
+            val domainList = response.map { it.toDomain()}
+            // si si jala se borra el chace biejo
+            inventoryDao.clearInventory()
+            inventoryDao.insertAll(domainList.map { it.toLocalEntity() })
+
+            Result.success(domainList)
+
         } catch (e: Exception) {
-            Result.failure(e)
+            android.util.Log.w("INVENTORY", "Fallo red a ver si jala el room: ${e.message}")
+            try {
+                val localData = inventoryDao.getAllInventory()
+                if (localData.isNotEmpty()) {
+                    Result.success(localData.map { it.toDomain() })
+                } else {
+                    Result.failure(Exception("Sin conexión y sin datos guardados"))
+                }
+            } catch (dbException: Exception) {
+                Result.failure(e)
+            }
         }
     }
 
@@ -45,15 +66,12 @@ class InventoryRepositoryImpl @Inject constructor(
 
     override suspend fun scanProduct(storeId: String, barcode: String): Result<ScannedProduct?> {
         android.util.Log.d("SCANNER_REPO", "Iniciando petición -> storeId: $storeId, barcode: $barcode")
-
         return try {
+
             val response = api.scanProduct(storeId, barcode)
-
-            android.util.Log.d("SCANNER_REPO", "Respuesta Exitosa (200 OK): $response")
-
             val domainProduct = response.toDomain()
-            android.util.Log.d("SCANNER_REPO", "Mapeo exitoso: $domainProduct")
 
+            android.util.Log.d("SCANNER_REPO", "Respuesta Exitosa (200 OK): $domainProduct")
             Result.success(domainProduct)
 
         } catch (e: retrofit2.HttpException) {
@@ -61,13 +79,28 @@ class InventoryRepositoryImpl @Inject constructor(
             val errorBody = e.response()?.errorBody()?.string()
             android.util.Log.e("SCANNER_REPO", "Error HTTP $code: $errorBody")
 
-            if (code == 404) Result.success(null)
-            else Result.failure(e)
-
-        } catch (e: Exception) {
-            android.util.Log.e("SCANNER_REPO", "EXCEPCIÓN CRÍTICA: ${e.message}")
-            e.printStackTrace()
-            Result.failure(e)
+            if (code == 404){
+                Result.success(null)
+            }else{
+                Result.failure(e)
+            }
+        }
+        catch (e: Exception) {
+            android.util.Log.e("SCANNER_REPO", "Fallo de red o excepción: ${e.message}. Intentando Room...")
+            searchBarcodeOffline(barcode, e)
+        }
+    }
+    private suspend fun searchBarcodeOffline(barcode: String, originalError: Exception): Result<ScannedProduct?> {
+        android.util.Log.w("SCANNER", "Buscando código offline en ruum")
+        return try {
+            val localProduct = inventoryDao.getProductByBarcode(barcode)
+            if (localProduct != null) {
+                Result.success(localProduct.toScannedProduct())
+            } else {
+                Result.failure(originalError)
+            }
+        } catch (dbException: Exception) {
+            Result.failure(originalError)
         }
     }
 

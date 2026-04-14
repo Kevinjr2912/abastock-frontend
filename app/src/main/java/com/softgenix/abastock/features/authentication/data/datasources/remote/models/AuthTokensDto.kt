@@ -3,10 +3,11 @@ package com.softgenix.abastock.features.authentication.data.datasources.remote.m
 import com.google.gson.annotations.SerializedName
 
 data class AuthTokensDto(
-    @SerializedName("Token") val token: TokenBodyDto
+    @SerializedName("access_token") val accessToken: String,
+    @SerializedName("refresh_token") val refreshToken: String
 )
 
-data class TokenBodyDto(
-    val accessToken: String,
-    val refreshToken: String
-)
+// data class TokenBodyDto(
+   // val accessToken: String,
+    // val refreshToken: String
+// )

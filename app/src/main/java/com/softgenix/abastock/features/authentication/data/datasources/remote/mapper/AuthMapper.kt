@@ -15,7 +15,7 @@ fun LoginCredentials.toDto(): LoginCredentialsDto {
 
 fun AuthTokensDto.toDomain(): AuthTokens {
     return AuthTokens(
-        accessToken = this.token.accessToken,
-        refreshToken = this.token.refreshToken
+        accessToken = this.accessToken,
+        refreshToken = this.refreshToken
     )
 }

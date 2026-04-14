@@ -17,6 +17,13 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     override suspend fun login(credentials: LoginCredentials): AuthTokens {
-        return  api.login(credentials.toDto()).toDomain()
+        val response = api.login(credentials.toDto())
+
+        if (response.isSuccessful && response.body() != null) {
+            return response.body()!!.toDomain()
+        } else {
+            val errorMsg = response.errorBody()?.string() ?: "Error desconocido del servidor"
+            throw Exception("HTTP ${response.code()}: $errorMsg")
+        }
     }
 }

@@ -36,7 +36,6 @@ class SupplyViewModel @Inject constructor(
     var currentStoreId: String = ""
 
     fun addToCart(item: SupplyTransactionItem) {
-        android.util.Log.d("VM_DEBUG", "Items antes: ${_uiState.value.cartItems.size}")
         try {
             val updatedList = _uiState.value.cartItems.toMutableList().apply {
                 add(item.copy(itemId = java.util.UUID.randomUUID().toString()))
@@ -55,41 +54,41 @@ class SupplyViewModel @Inject constructor(
             android.util.Log.d("SUPPLY_VM", "ID Guardado: $currentStoreId")
         }
     }
-
-    fun finishPurchase(manualStoreId: String = "") {
-        val finalId = manualStoreId.ifEmpty { currentStoreId.ifEmpty { storeId } }
-        val state = _uiState.value
-
-        if (finalId.isEmpty()) {
-            android.util.Log.e("SUPPLY_VM", "error iddddd")
-            return
-        }
-
-        if (state.cartItems.isEmpty()) return
-
+    fun finishPurchase(storeId: String) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            val currentItems = _uiState.value.cartItems
+            if (currentItems.isEmpty()) return@launch
+
+            _uiState.update { it.copy(isLoading = true, error = null) }
 
             val transaction = SupplyTransaction(
-                transactionId = UUID.randomUUID().toString(),
-                storeId = finalId,
-                date = Instant.now().toString(),
-                totalCost = state.totalInvestment,
-                items = state.cartItems.map { item ->
-                    item.copy(
+                transactionId = java.util.UUID.randomUUID().toString(),
+                storeId = storeId,
+                date = java.time.Instant.now().toString(),
+                totalCost = currentItems.sumOf { it.quantity * it.costPrice },
+                items = currentItems.map { item ->
+                    SupplyTransactionItem(
+                        itemId = java.util.UUID.randomUUID().toString(),
                         presentationId = item.presentationId,
-                        inventoryId = item.inventoryId
+                        inventoryId = item.inventoryId,
+                        quantity = item.quantity.toInt(),
+                        costPrice = item.costPrice,
+                        salePrice = item.salePrice,
+                        name = item.name,
+                        brand = item.brand,
+                        imageUrl = item.imageUrl
                     )
                 }
             )
 
-            confirmPurchaseUseCase(transaction).onSuccess {
-                vibrationManager.vibrateSuccess()
-                _uiState.update { it.copy(isLoading = false, isSuccess = true) }
-            }.onFailure { e ->
-                vibrationManager.vibrateError()
-                _uiState.update { it.copy(isLoading = false, error = e.message) }
-            }
+            confirmPurchaseUseCase(transaction).fold(
+                onSuccess = {
+                    _uiState.update { it.copy(isLoading = false, isSuccess = true) }
+                },
+                onFailure = { error ->
+                    _uiState.update { it.copy(isLoading = false, error= error.message) }
+                }
+            )
         }
     }
 

@@ -28,23 +28,18 @@ class SignInViewModel @Inject constructor(
 
     fun onSignIn() {
         val current = _state.value
-
         val credential = current.credential.trim()
 
         val isEmail = credential.contains("@")
 
         if (isEmail) {
             if (!isValidGmail(credential)) {
-                _state.update {
-                    it.copy(error = "Solo se permiten correos Gmail")
-                }
+                _state.update { it.copy(error = "Solo se permiten correos Gmail") }
                 return
             }
         } else {
             if (!isValidPhone(credential)) {
-                _state.update {
-                    it.copy(error = "El número debe tener 10 dígitos")
-                }
+                _state.update { it.copy(error = "El número debe tener 10 dígitos") }
                 return
             }
         }
@@ -60,6 +55,7 @@ class SignInViewModel @Inject constructor(
 
             loginUseCase(credentials)
                 .onSuccess { tokens ->
+
                     tokenManager.saveTokens(tokens.accessToken, tokens.refreshToken)
 
                     _state.update {
@@ -69,11 +65,12 @@ class SignInViewModel @Inject constructor(
                         )
                     }
                 }
-                .onFailure {
+                .onFailure { error ->
+
                     _state.update {
                         it.copy(
                             isLoading = false,
-                            error = "Credenciales inválidas"
+                            error = "Error del Back: ${error.message ?: "Desconocido"}"
                         )
                     }
                 }

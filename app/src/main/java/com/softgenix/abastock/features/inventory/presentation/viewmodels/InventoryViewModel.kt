@@ -1,13 +1,18 @@
 package com.softgenix.abastock.features.inventory.presentation.viewmodels
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import com.softgenix.abastock.core.data.local.TokenManager
 import com.softgenix.abastock.core.hardware.domain.VoiceManager
 import com.softgenix.abastock.features.inventory.domain.usecases.GetInventoryUseCase
 import com.softgenix.abastock.features.inventory.domain.usecases.SearchInventoryUseCase
 import com.softgenix.abastock.features.inventory.presentation.screens.InventoryUiState
+import com.softgenix.abastock.features.reporting.data.workers.PurchaseReportWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -19,7 +24,8 @@ class InventoryViewModel @Inject constructor(
     private val getInventoryUseCase: GetInventoryUseCase,
     private val searchInventoryUseCase: SearchInventoryUseCase,
     private val voiceManager: VoiceManager,
-    private val tokenManager: TokenManager
+    private val tokenManager: TokenManager,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(InventoryUiState())
@@ -32,6 +38,13 @@ class InventoryViewModel @Inject constructor(
         } else {
             _uiState.update { it.copy(errorMessage = "No se encontró ID de tienda") }
         }
+    }
+
+    fun triggerManualReport() {
+        val manualRequest = OneTimeWorkRequestBuilder<PurchaseReportWorker>()
+            .addTag("MANUAL_REPORT")
+            .build()
+        WorkManager.getInstance(context).enqueue(manualRequest)
     }
 
     fun startVoiceSearch() {

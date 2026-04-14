@@ -25,14 +25,24 @@ class AddToCartViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             scanProductUseCase(barcode).onSuccess { product ->
-                _uiState.update {
-                    it.copy(
-                        product = product,
-                        isLoading = false,
-                        costPrice = product?.value?.toString() ?: "",
-                        salePrice = product?.value?.toString() ?: ""
-                    )
+                android.util.Log.d("DEBUG_SCANNER", ">>> DATOS RECIBIDOS <<<")
+                product?.let {
+                    android.util.Log.d("DEBUG_SCANNER", ">>> DATOS DEL ESCANEO <<<")
+                    android.util.Log.d("DEBUG_SCANNER", "Producto: ${product?.productName}")
+                    android.util.Log.d("DEBUG_SCANNER", "InvID: ${product?.id}")
+                    android.util.Log.d(
+                        "DEBUG_SCANNER",
+                        "idddd: ${product?.presentationId}"
+                    ) // este faltabas
                 }
+                    _uiState.update {
+                        it.copy(
+                            product = product,
+                            isLoading = false,
+                            costPrice = "", // El usuario lo ingresa
+                            salePrice = product?.value?.toString() ?: ""
+                        )
+                    }
             }.onFailure {
                 _uiState.update { it.copy(isLoading = false, error = "Error al cargar info") }
             }

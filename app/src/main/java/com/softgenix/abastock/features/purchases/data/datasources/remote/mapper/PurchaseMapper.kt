@@ -13,7 +13,8 @@ fun ProductDto.toDomain(): PurchaseItem {
         quantity = 0.0,
         costPrice = 0.0,
         salePrice = this.salePrice,
-        barcode = ""
+        barcode = "",
+        inventoryId = this.inventoryId ?: "",
     )
 }
 

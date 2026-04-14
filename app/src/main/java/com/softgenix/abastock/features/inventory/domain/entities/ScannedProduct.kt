@@ -1,7 +1,8 @@
 package com.softgenix.abastock.features.inventory.domain.entities
 
 data class ScannedProduct(
-    val id: String,
+    val id: String, //el inventory id
+    val presentationId: String,
     val productName: String,
     val brandName: String,
     val categoryName: String,
