@@ -7,6 +7,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.softgenix.abastock.core.data.local.TokenManager
 import com.softgenix.abastock.core.hardware.domain.VoiceManager
+import com.softgenix.abastock.features.communications.domain.usecases.TriggerTestSummaryUseCase
 import com.softgenix.abastock.features.inventory.domain.usecases.GetInventoryUseCase
 import com.softgenix.abastock.features.inventory.domain.usecases.SearchInventoryUseCase
 import com.softgenix.abastock.features.inventory.presentation.screens.InventoryUiState
@@ -25,6 +26,7 @@ class InventoryViewModel @Inject constructor(
     private val searchInventoryUseCase: SearchInventoryUseCase,
     private val voiceManager: VoiceManager,
     private val tokenManager: TokenManager,
+    private val triggerTestSummaryUseCase: TriggerTestSummaryUseCase,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -45,6 +47,14 @@ class InventoryViewModel @Inject constructor(
             .addTag("MANUAL_REPORT")
             .build()
         WorkManager.getInstance(context).enqueue(manualRequest)
+    }
+
+    fun triggerPushTest() {
+        viewModelScope.launch {
+            triggerTestSummaryUseCase()
+                .onSuccess { android.util.Log.d("FCM_TEST", "Push enviado por el backend ✅") }
+                .onFailure { android.util.Log.e("FCM_TEST", "Error: ${it.message}") }
+        }
     }
 
     fun startVoiceSearch() {

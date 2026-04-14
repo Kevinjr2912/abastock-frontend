@@ -108,6 +108,8 @@ dependencies {
     // Firebase
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
+    implementation(libs.firebase.messaging)
+
     //Hardware
     implementation(libs.accompanist.permissions)
 

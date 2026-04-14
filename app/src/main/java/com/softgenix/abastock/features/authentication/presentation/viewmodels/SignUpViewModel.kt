@@ -8,6 +8,7 @@ import com.softgenix.abastock.features.authentication.domain.entities.RegisterUs
 import com.softgenix.abastock.features.authentication.domain.usecases.LoginUseCase
 import com.softgenix.abastock.features.authentication.domain.usecases.RegisterUserUseCase
 import com.softgenix.abastock.features.authentication.presentation.screens.SignUpUIState
+import com.softgenix.abastock.features.communications.domain.usecases.RegisterDeviceTokenUseCase
 import com.softgenix.abastock.features.store.domain.entities.Store
 import com.softgenix.abastock.features.store.domain.usecases.CreateStoreUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -15,6 +16,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import java.util.UUID
 import javax.inject.Inject
 
@@ -23,7 +25,8 @@ class SignUpViewModel @Inject constructor(
     private val registerUserUseCase: RegisterUserUseCase,
     private val createStoreUseCase: CreateStoreUseCase,
     private val loginUseCase: LoginUseCase,
-    private val tokenManager: TokenManager
+    private val tokenManager: TokenManager,
+    private val registerDeviceTokenUseCase: RegisterDeviceTokenUseCase
 ) : ViewModel() {
     private val _state = MutableStateFlow(SignUpUIState())
     val state = _state.asStateFlow()
@@ -105,43 +108,40 @@ class SignUpViewModel @Inject constructor(
 
     fun onAutoLogin() {
         val current = _state.value
-
         viewModelScope.launch {
-
             _state.update { it.copy(isLoading = true) }
-
-            val credentials =
-                if (current.email.isNotBlank()) {
-                    LoginCredentials(
-                        email = current.email,
-                        password = current.password
-                    )
-                } else {
-                    LoginCredentials(
-                        phoneNumber = current.phoneNumber,
-                        password = current.password
-                    )
-                }
+            val credentials = if (current.email.isNotBlank())
+                LoginCredentials(email = current.email, password = current.password)
+            else
+                LoginCredentials(phoneNumber = current.phoneNumber, password = current.password)
 
             loginUseCase(credentials)
                 .onSuccess { tokens ->
                     tokenManager.saveTokens(tokens.accessToken, tokens.refreshToken)
-
-                    _state.update {
-                        it.copy(
-                            isLoading = false,
-                            isAuthenticated = true
-                        )
-                    }
+                    registerFcmToken()   // ← NUEVO
+                    _state.update { it.copy(isLoading = false, isAuthenticated = true) }
                 }
                 .onFailure { e ->
-                    val errorMessage = when {
+                    val msg = when {
                         e.message?.contains("409") == true -> "El correo o teléfono ya está registrado"
-                        e.message?.contains("network") == true -> "Sin conexión a internet"
+                        e.message?.contains("network") == true -> "Sin conexión"
                         else -> "Error al crear la cuenta"
                     }
-                    _state.update { it.copy(isLoading = false, error = errorMessage) }
+                    _state.update { it.copy(isLoading = false, error = msg) }
                 }
+        }
+    }
+
+    private fun registerFcmToken() {
+        viewModelScope.launch {
+            try {
+                val fcmToken = com.google.firebase.messaging.FirebaseMessaging
+                    .getInstance().token.await()
+                registerDeviceTokenUseCase(fcmToken)
+                    .onFailure { android.util.Log.w("FCM", "Token no registrado: ${it.message}") }
+            } catch (e: Exception) {
+                android.util.Log.e("FCM", "Error FCM: ${e.message}")
+            }
         }
     }
 
