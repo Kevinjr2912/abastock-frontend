@@ -48,6 +48,7 @@ class SignUpViewModel @Inject constructor(
 
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }
+
             val user = RegisterUser(
                 id = userId,
                 firstName = nameParts.first,
@@ -58,49 +59,52 @@ class SignUpViewModel @Inject constructor(
                 email = current.email,
                 password = current.password
             )
-
             registerUserUseCase(user)
                 .onSuccess {
-                    val store = Store(
-                        id = UUID.randomUUID().toString(),
-                        name = current.storeName,
-                        userId = userId
-                    )
-                    createStoreUseCase(store)
-                        .onSuccess {
-                            // Con esto indicamos un registro completo para luego ir a SuccessScreen
-                            _state.update {
-                                it.copy(
-                                    isLoading = false,
-                                    isSuccess = true,
-                                    email = current.email,
-                                    password = current.password
-                                )
-                            }
+                    val credentials = LoginCredentials(email = current.email, password = current.password)
+
+                    loginUseCase(credentials)
+                        .onSuccess { tokens ->
+                            tokenManager.saveTokens(tokens.accessToken, tokens.refreshToken)
+                            val store = Store(
+                                id = UUID.randomUUID().toString(),
+                                name = current.storeName,
+                                userId = userId
+                            )
+
+                            createStoreUseCase(store)
+                                .onSuccess {
+                                    _state.update {
+                                        it.copy(
+                                            isLoading = false,
+                                            isSuccess = true,
+                                            email = current.email,
+                                            password = current.password
+                                        )
+                                    }
+                                }
+                                .onFailure { e ->
+                                    _state.update { it.copy(isLoading = false, error = "Usuario creado, pero falló la tienda: ${e.message}") }
+                                }
                         }
                         .onFailure { e ->
-                            _state.update { it.copy(isLoading = false, error = e.message) }
+                            _state.update { it.copy(isLoading = false, error = "Usuario creado, pero falló el login automático: ${e.message}") }
                         }
                 }
                 .onFailure { e ->
-                    _state.update { it.copy(isLoading = false, error = e.message) }
+                    _state.update { it.copy(isLoading = false, error = "Fallo al registrar: ${e.message}") }
                 }
         }
     }
+
     private fun splitNames(fullName: String): Pair<String, String> {
         val parts = fullName.trim().split("\\s+".toRegex())
-        return Pair(
-            parts.firstOrNull() ?: "",
-            parts.drop(1).joinToString(" ")
-        )
+        return Pair(parts.firstOrNull() ?: "", parts.drop(1).joinToString(" "))
     }
 
     private fun splitSurnames(fullSurname: String): Pair<String, String> {
         val parts = fullSurname.trim().split("\\s+".toRegex())
-        return Pair(
-            parts.firstOrNull() ?: "",
-            parts.drop(1).joinToString(" ")
-        )
+        return Pair(parts.firstOrNull() ?: "", parts.drop(1).joinToString(" "))
     }
 
     fun onAutoLogin() {
