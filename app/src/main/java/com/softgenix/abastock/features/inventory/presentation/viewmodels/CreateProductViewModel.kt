@@ -2,12 +2,14 @@ package com.softgenix.abastock.features.inventory.presentation.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.softgenix.abastock.core.data.local.TokenManager
 import com.softgenix.abastock.core.hardware.domain.VibrationManager
 import com.softgenix.abastock.features.inventory.domain.entities.Brand
 import com.softgenix.abastock.features.inventory.domain.entities.Category
 import com.softgenix.abastock.features.inventory.domain.entities.NewBarcode
 import com.softgenix.abastock.features.inventory.domain.entities.NewPresentation
 import com.softgenix.abastock.features.inventory.domain.entities.NewProduct
+import com.softgenix.abastock.features.inventory.domain.usecases.CreateInventoryUseCase
 import com.softgenix.abastock.features.inventory.domain.usecases.CreateProductUseCase
 import com.softgenix.abastock.features.inventory.domain.usecases.GetCreateProductDataUseCase
 import com.softgenix.abastock.features.inventory.presentation.screens.CreateProductUiState
@@ -23,7 +25,9 @@ import javax.inject.Inject
 class CreateProductViewModel @Inject constructor(
     private val getInitialDataUseCase: GetCreateProductDataUseCase,
     private val createProductUseCase: CreateProductUseCase,
-    private val vibrationManager: VibrationManager
+    private val vibrationManager: VibrationManager,
+    private val createInventoryUseCase: CreateInventoryUseCase,
+    private val tokenManager: TokenManager,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CreateProductUiState())
@@ -67,43 +71,65 @@ class CreateProductViewModel @Inject constructor(
 
     fun saveProduct(barcode: String) {
         val state = _uiState.value
+        if (state.name.isBlank()) {
+            vibrationManager.vibrateError()
+            _uiState.update { it.copy(error = "El nombre es obligatorio") }
+            return
+        }
 
         if (state.selectedBrand == null || state.selectedCategory == null) {
             vibrationManager.vibrateError()
+            _uiState.update { it.copy(error = "Selecciona marca y categoría") }
+            return
+        }
+
+        if (state.selectedImageUri == null) {
+            vibrationManager.vibrateError()
+            _uiState.update { it.copy(error = "Por favor selecciona una imagen de la galería") }
             return
         }
 
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            _uiState.update { it.copy(isLoading = true, error = null) }
+            val presentationId = UUID.randomUUID().toString()
 
             val newProduct = NewProduct(
-                productId = java.util.UUID.randomUUID().toString(),
+                productId = UUID.randomUUID().toString(),
                 name = state.name,
                 brandId = state.selectedBrand.id,
                 categoryId = state.selectedCategory.id,
                 imageUri = state.selectedImageUri?.toString(),
                 presentation = NewPresentation(
-                    presentationId = java.util.UUID.randomUUID().toString(),
+                    presentationId = presentationId,
                     value = state.value.toIntOrNull() ?: 1,
                     unit = state.unit,
-                    salePrice = 0.0,
+                    salePrice = 1.0,
                     barcode = NewBarcode(
-                        barcodeId = java.util.UUID.randomUUID().toString(),
+                        barcodeId = UUID.randomUUID().toString(),
                         code = barcode
                     )
                 )
             )
             createProductUseCase(newProduct).onSuccess {
-                vibrationManager.vibrateSuccess()
-                android.util.Log.d("CREATE_PRODUCT", "Producto creado con éxito")
-                _uiState.update { it.copy(isLoading = false, isSuccess = true) }
+                val inventoryId = UUID.randomUUID().toString()
+                val storeId = tokenManager.getStoreId()
+
+                createInventoryUseCase(
+                    inventoryId = inventoryId,
+                    storeId = storeId,
+                    presentationId = presentationId
+                ).onSuccess {
+                    vibrationManager.vibrateSuccess()
+                    _uiState.update { it.copy(isLoading = false, isSuccess = true) }
+
+                }.onFailure { e ->
+                    vibrationManager.vibrateError()
+                    _uiState.update { it.copy(isLoading = false, error = "Producto creado, pero falló el inventario: ${e.message}") }
+                }
+
             }.onFailure { e ->
                 vibrationManager.vibrateError()
-                android.util.Log.e("CREATE_PRODUCT", "Error al crear: ${e.message}")
-                _uiState.update { it.copy(
-                    isLoading = false,
-                    error = e.message ?: "Error desconocido"
-                )}
+                _uiState.update { it.copy(isLoading = false, error = e.message ?: "Error desconocido") }
             }
         }
     }

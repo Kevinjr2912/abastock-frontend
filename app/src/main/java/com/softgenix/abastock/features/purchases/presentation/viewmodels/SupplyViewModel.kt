@@ -29,9 +29,7 @@ class SupplyViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(SupplyUiState())
     val uiState = _uiState.asStateFlow()
 
-    val storeId: String = tokenManager.getSession()?.storeId
-        ?: savedStateHandle.get<String>("storeId")
-        ?: ""
+    val storeId: String = tokenManager.getStoreId()
 
     var currentStoreId: String = ""
 
@@ -54,16 +52,17 @@ class SupplyViewModel @Inject constructor(
             android.util.Log.d("SUPPLY_VM", "ID Guardado: $currentStoreId")
         }
     }
-    fun finishPurchase(storeId: String) {
+    fun finishPurchase(manualStoreId: String = "") {
         viewModelScope.launch {
             val currentItems = _uiState.value.cartItems
             if (currentItems.isEmpty()) return@launch
 
             _uiState.update { it.copy(isLoading = true, error = null) }
+            val finalStoreId = tokenManager.getStoreId()
 
             val transaction = SupplyTransaction(
                 transactionId = java.util.UUID.randomUUID().toString(),
-                storeId = storeId,
+                storeId = finalStoreId,
                 date = java.time.Instant.now().toString(),
                 totalCost = currentItems.sumOf { it.quantity * it.costPrice },
                 items = currentItems.map { item ->
@@ -83,9 +82,11 @@ class SupplyViewModel @Inject constructor(
 
             confirmPurchaseUseCase(transaction).fold(
                 onSuccess = {
+                    vibrationManager.vibrateSuccess()
                     _uiState.update { it.copy(isLoading = false, isSuccess = true) }
                 },
                 onFailure = { error ->
+                    vibrationManager.vibrateError()
                     _uiState.update { it.copy(isLoading = false, error= error.message) }
                 }
             )

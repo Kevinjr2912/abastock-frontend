@@ -161,6 +161,12 @@ fun PurchaseSummaryScreen(
                         }
 
                         Column(horizontalAlignment = Alignment.End) {
+                            androidx.compose.material3.IconButton(
+                                onClick = { viewModel.removeFromCart(item.itemId) },
+                                modifier = Modifier.size(24.dp)
+                            ) {
+                                Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = ErrorRed)
+                            }
 
                             Spacer(Modifier.height(16.dp))
                             Text("Subtotal", fontSize = 10.sp, color = TextSec)

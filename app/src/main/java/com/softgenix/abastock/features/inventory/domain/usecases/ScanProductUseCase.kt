@@ -9,9 +9,7 @@ class ScanProductUseCase @Inject constructor(
     private val tokenManager: TokenManager
 ) {
     suspend operator fun invoke(barcode: String): Result<ScannedProduct?> {
-        val session = tokenManager.getSession()
-        val storeId = session?.storeId ?: return Result.failure(Exception("No se encontró el ID de la tienda"))
-
-        return repository.scanProduct(storeId, barcode)
+        val globalStoreId = tokenManager.getStoreId()
+        return repository.scanProduct(storeId = globalStoreId, barcode = barcode)
     }
 }

@@ -3,6 +3,7 @@ package com.softgenix.abastock.features.inventory.data.datasources.remote.api
 
 import com.softgenix.abastock.features.inventory.data.datasources.remote.models.BrandDto
 import com.softgenix.abastock.features.inventory.data.datasources.remote.models.CategoryDto
+import com.softgenix.abastock.features.inventory.data.datasources.remote.models.CreateInventoryDto
 import com.softgenix.abastock.features.inventory.data.datasources.remote.models.CreateProductRequestDto
 import com.softgenix.abastock.features.inventory.data.datasources.remote.models.InventoryDto
 import com.softgenix.abastock.features.inventory.data.datasources.remote.models.InventoryResponse
@@ -49,4 +50,10 @@ interface InventoryApi {
         @Part("data") productData: RequestBody,
         @Part image: MultipartBody.Part?
     ): retrofit2.Response<Unit>
+
+    @POST("inventories")
+    suspend fun createInventory(
+        @Body request: CreateInventoryDto
+    ): retrofit2.Response<Unit>
+
 }

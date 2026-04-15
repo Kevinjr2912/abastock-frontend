@@ -32,12 +32,8 @@ class InventoryViewModel @Inject constructor(
     val uiState = _uiState.asStateFlow()
 
     init {
-        val storeId = tokenManager.getSession()?.storeId ?: ""
-        if (storeId.isNotEmpty()) {
-            loadInventory(storeId)
-        } else {
-            _uiState.update { it.copy(errorMessage = "No se encontró ID de tienda") }
-        }
+        val globalStoreId = tokenManager.getStoreId()
+        loadInventory(globalStoreId)
     }
 
     fun triggerManualReport() {
@@ -55,7 +51,7 @@ class InventoryViewModel @Inject constructor(
 
     fun loadInventory(storeId: String) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             getInventoryUseCase(storeId).onSuccess { list ->
                 _uiState.update { it.copy(
                     isLoading = false,

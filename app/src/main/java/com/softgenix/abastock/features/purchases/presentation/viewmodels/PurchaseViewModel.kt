@@ -1,12 +1,12 @@
 package com.softgenix.abastock.features.purchases.presentation.viewmodels
 
+import android.util.Log // 🔥 IMPORTANTE
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.softgenix.abastock.features.inventory.domain.entities.ScannedProduct
 import com.softgenix.abastock.features.inventory.domain.usecases.ScanProductUseCase
 import com.softgenix.abastock.features.purchases.domain.entities.Purchase
 import com.softgenix.abastock.features.purchases.domain.entities.PurchaseItem
-import com.softgenix.abastock.features.purchases.domain.repositories.PurchaseRepository
 import com.softgenix.abastock.features.purchases.domain.usecases.GetProductByBarcodeUseCase
 import com.softgenix.abastock.features.purchases.domain.usecases.SavePurchaseUseCase
 import com.softgenix.abastock.features.purchases.presentation.screens.PurchaseUiState
@@ -47,8 +47,17 @@ class PurchaseViewModel @Inject constructor(
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-
             scanProductUseCase(barcode).fold(
+                onFailure = { error ->
+                    _uiState.update { it.copy(isLoading = false) }
+
+                    val errorMsg = error.message ?: ""
+                    if (errorMsg.contains("404") || errorMsg.contains("400")) {
+                        onNotFound(barcode)
+                    } else {
+                        _uiState.update { it.copy(errorMessage = "Error de red: $errorMsg") }
+                    }
+                },
                 onSuccess = { product ->
                     _uiState.update { it.copy(isLoading = false) }
                     if (product != null) {
@@ -56,9 +65,6 @@ class PurchaseViewModel @Inject constructor(
                     } else {
                         onNotFound(barcode)
                     }
-                },
-                onFailure = { error ->
-                    _uiState.update { it.copy(isLoading = false, errorMessage = "Error de red: ${error.message}") }
                 }
             )
 
