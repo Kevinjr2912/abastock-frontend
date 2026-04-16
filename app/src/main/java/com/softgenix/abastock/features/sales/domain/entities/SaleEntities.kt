@@ -34,5 +34,6 @@ data class SaleHistoryRecord(
 data class SaleHistoryItem(
     val productName: String,
     val quantity: Int,
-    val subtotal: Double
+    val subtotal: Double,
+    val imageUrl: String? = null
 )

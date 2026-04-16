@@ -42,5 +42,6 @@ data class SaleRecordDto(
 data class SaleItemDto(
     @SerializedName("productName") val productName: String,
     @SerializedName("quantity") val quantity: Int,
-    @SerializedName("subtotal") val subtotal: Double
+    @SerializedName("subtotal") val subtotal: Double,
+    @SerializedName("imageUrl") val imageUrl: String? = null
 )

@@ -1,11 +1,14 @@
 package com.softgenix.abastock.features.sales.navigation
 
+import androidx.compose.runtime.remember
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import com.softgenix.abastock.core.navigation.Cart
 import com.softgenix.abastock.core.navigation.FeatureNavGraph
+import com.softgenix.abastock.core.navigation.Inventory
 import com.softgenix.abastock.core.navigation.ProductPicker
 import com.softgenix.abastock.core.navigation.SalesHistory
 import com.softgenix.abastock.core.navigation.Success
@@ -13,11 +16,11 @@ import com.softgenix.abastock.features.sales.presentation.screens.ProductSelecti
 import com.softgenix.abastock.features.sales.presentation.screens.SalesHistoryScreen
 import com.softgenix.abastock.features.sales.presentation.screens.SalesScreen
 import com.softgenix.abastock.features.sales.presentation.screens.SuccessSaleScreen
+import com.softgenix.abastock.features.sales.presentation.viewmodels.SalesViewModel
 
-class SalesNavGraph : FeatureNavGraph{
+class SalesNavGraph : FeatureNavGraph {
 
-    override fun registerNavGraph(navGraphBuilder: NavGraphBuilder, navController: NavHostController
-    ) {
+    override fun registerNavGraph(navGraphBuilder: NavGraphBuilder, navController: NavHostController) {
 
         navGraphBuilder.composable<SalesHistory> {
             SalesHistoryScreen(
@@ -30,7 +33,9 @@ class SalesNavGraph : FeatureNavGraph{
             )
         }
 
-        navGraphBuilder.composable<Cart> {
+        navGraphBuilder.composable<Cart> { backStackEntry ->
+            val salesViewModel: SalesViewModel = hiltViewModel(backStackEntry)
+
             SalesScreen(
                 navController = navController,
                 onNavigateToSelection = {
@@ -38,14 +43,19 @@ class SalesNavGraph : FeatureNavGraph{
                 },
                 onNavigateToSuccess = { total ->
                     navController.navigate(Success(total))
-                }
+                },
+                viewModel = salesViewModel
             )
         }
 
         navGraphBuilder.composable<ProductPicker> {
+            val cartEntry = remember(it) { navController.getBackStackEntry(Cart) }
+            val salesViewModel: SalesViewModel = hiltViewModel(cartEntry)
+
             ProductSelectionScreen(
                 onBack = { navController.popBackStack() },
-                onProductSelected = {
+                onProductSelected = { inventoryItem ->
+                    salesViewModel.addInventoryItemToCart(inventoryItem)
                     navController.popBackStack()
                 }
             )
@@ -56,8 +66,8 @@ class SalesNavGraph : FeatureNavGraph{
             SuccessSaleScreen(
                 total = route.total,
                 onDismiss = {
-                    navController.navigate(Cart) {
-                        popUpTo<Cart> { inclusive = true }
+                    navController.navigate(Inventory) {
+                        popUpTo(Cart) { inclusive = true }
                     }
                 }
             )

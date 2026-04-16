@@ -25,6 +25,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -67,6 +68,10 @@ fun InventoryScreen(
     val permissionState = rememberPermissionState(
         permission = android.Manifest.permission.RECORD_AUDIO
     )
+
+    LaunchedEffect(Unit) {
+        viewModel.refreshInventory()
+    }
 
     Scaffold(
         topBar = {

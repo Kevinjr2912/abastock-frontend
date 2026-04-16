@@ -38,6 +38,7 @@ import androidx.navigation.NavDestination.Companion.hasRoute
 import com.softgenix.abastock.core.navigation.Cart
 import com.softgenix.abastock.core.navigation.Home
 import com.softgenix.abastock.core.navigation.PurchaseScanner
+import com.softgenix.abastock.core.navigation.SalesHistory
 
 @Composable
 fun AbastockBottomBar(
@@ -80,8 +81,14 @@ fun AbastockBottomBar(
                 BottomNavItem(
                     label = "Ventas",
                     icon = R.drawable.ic_ventas,
-                    isSelected = false,
-                    onClick = { }
+                    isSelected = currentDestination?.hasRoute<SalesHistory>() == true,
+                    onClick = {
+                        navController.navigate(SalesHistory) {
+                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
                 )
 
                 Spacer(modifier = Modifier.weight(1f))

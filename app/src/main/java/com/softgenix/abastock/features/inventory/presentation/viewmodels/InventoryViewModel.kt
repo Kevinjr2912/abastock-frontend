@@ -64,6 +64,13 @@ class InventoryViewModel @Inject constructor(
         }
     }
 
+    fun refreshInventory() {
+        val globalStoreId = tokenManager.getStoreId()
+        if (globalStoreId.isNotEmpty()) {
+            loadInventory(globalStoreId)
+        }
+    }
+
     fun onSearchQueryChange(newQuery: String) {
         _uiState.update { it.copy(searchQuery = newQuery) }
         filterInventory()
