@@ -9,6 +9,9 @@ import android.graphics.pdf.PdfDocument
 import android.os.Environment
 import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.softgenix.abastock.core.database.dao.PurchaseDao
 import com.softgenix.abastock.core.database.entities.LocalPurchaseEntity
@@ -18,13 +21,12 @@ import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
 import java.io.File
 import java.io.FileOutputStream
-
+import java.util.concurrent.TimeUnit
 
 class PurchaseReportWorker(
     context: Context,
     workerParams: WorkerParameters
 ) : CoroutineWorker(context, workerParams) {
-
 
     @EntryPoint
     @InstallIn(SingletonComponent::class)
@@ -33,7 +35,6 @@ class PurchaseReportWorker(
     }
 
     override suspend fun doWork(): Result {
-
         return try {
             val entryPoint = EntryPointAccessors.fromApplication(
                 applicationContext,
@@ -43,18 +44,34 @@ class PurchaseReportWorker(
             val purchases = purchaseDao.getAllPurchases()
 
             if (purchases.isEmpty()) {
-
                 showNotification("Reporte Omitido", "No hay compras registradas esta semana.")
+                reScheduleSelf()
                 return Result.success()
             }
 
             val file = createPdfReport(purchases)
             showNotification("Reporte de compras Listo", "El PDF se guardó en Descargas")
+
+            reScheduleSelf()
+
             Result.success()
 
         } catch (e: Exception) {
+            reScheduleSelf()
             Result.failure()
         }
+    }
+
+    private fun reScheduleSelf() {
+        val nextRequest = OneTimeWorkRequestBuilder<PurchaseReportWorker>()
+            .setInitialDelay(1, TimeUnit.MINUTES)
+            .build()
+
+        WorkManager.getInstance(applicationContext).enqueueUniqueWork(
+            "PURCHASE_REPORT_RECURSIVE",
+            ExistingWorkPolicy.REPLACE,
+            nextRequest
+        )
     }
 
     private fun createPdfReport(purchases: List<LocalPurchaseEntity>): File {
@@ -82,12 +99,10 @@ class PurchaseReportWorker(
             strokeWidth = 1f
         }
 
-        // encabezado del documento
         canvas.drawText("REPORTE SEMANAL DE COMPRAS", 20f, 40f, titlePaint)
         canvas.drawText("Abastock App - Control de Inventario", 20f, 60f, textPaint)
         canvas.drawLine(20f, 75f, 400f, 75f, linePaint)
 
-        // encabezados de la tabla
         var yPos = 100f
         canvas.drawText("FECHA", 20f, yPos, headerPaint)
         canvas.drawText("PRODUCTOS", 120f, yPos, headerPaint)
@@ -99,7 +114,6 @@ class PurchaseReportWorker(
 
         var grandTotal = 0.0
 
-        // llenado de la tabla
         purchases.forEach { purchase ->
             val cleanDate = purchase.date.substringBefore("T")
             canvas.drawText(cleanDate, 20f, yPos, textPaint)

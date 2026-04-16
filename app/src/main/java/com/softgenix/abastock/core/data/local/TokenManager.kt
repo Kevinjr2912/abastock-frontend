@@ -24,9 +24,11 @@ class TokenManager @Inject constructor(
 
     fun getAccessToken(): String? = prefs.getString("access_token", null)
     fun getRefreshToken(): String? = prefs.getString("refresh_token", null)
+
     fun getStoreId(): String {
         return prefs.getString("GLOBAL_STORE_ID", TEMPORARY_STORE_ID) ?: TEMPORARY_STORE_ID
     }
+
     fun saveStoreId(storeId: String) {
         prefs.edit().putString("GLOBAL_STORE_ID", storeId).apply()
     }
@@ -51,18 +53,21 @@ class TokenManager @Inject constructor(
             if (backendStoreId.isNotEmpty()) {
                 saveStoreId(backendStoreId)
             }
+
+            val extractedUserId = payload.optString("userId", payload.optString("sub", payload.optString("id", "")))
+
             prefs.edit()
-
-
-
                 .putString("store_id", payload.optString("storeId", null))
-                .putString("user_id", payload.getString("userId"))
-                .putString("email", payload.getString("email"))
-                .putString("name", payload.getString("name"))
+                .putString("user_id", extractedUserId)
+                .putString("email", payload.optString("email", ""))
+                .putString("name", payload.optString("name", ""))
                 .putString("store_name", payload.optString("storeName", null))
                 .apply()
+
+            android.util.Log.d("FCM_DEBUG", "JWT decodificado con éxito. UserId: $extractedUserId")
+
         } catch (e: Exception) {
-            android.util.Log.e("FCM_DEBUG", "Error decodificando JWT: ${e.message}", e)  // 👈 visible en logcat
+            android.util.Log.e("FCM_DEBUG", "Error decodificando JWT: ${e.message}", e)
         }
     }
 
