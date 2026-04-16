@@ -58,7 +58,10 @@ class SignInViewModel @Inject constructor(
             loginUseCase(credentials)
                 .onSuccess { tokens ->
                     tokenManager.saveTokens(tokens.accessToken, tokens.refreshToken)
-                    registerFcmToken()   // ← NUEVO: registrar token tras login
+                    val session = tokenManager.getSession()
+                    android.util.Log.d("FCM_DEBUG", "Session tras login: userId=${session?.userId}")
+
+                    registerFcmToken()
                     _state.update { it.copy(isLoading = false, isAuthenticated = true) }
                 }
                 .onFailure { error ->
@@ -71,35 +74,31 @@ class SignInViewModel @Inject constructor(
     }
 
     // ─── FCM ─────────────────────────────────────────────────────────────────
-    private fun registerFcmToken() {
-        viewModelScope.launch {
-            android.util.Log.d("FCM_DEBUG", "1️⃣ registerFcmToken() iniciado")
+    private suspend fun registerFcmToken() {
+        android.util.Log.d("FCM_DEBUG", "registerFcmToken() iniciado")
 
-            val session = tokenManager.getSession()
-            android.util.Log.d("FCM_DEBUG", "2️⃣ Session: userId=${session?.userId}, storeId=${session?.storeId}")
+        val session = tokenManager.getSession()
+        android.util.Log.d("FCM_DEBUG", "Session: userId=${session?.userId}, storeId=${session?.storeId}")
 
-            if (session == null) {
-                android.util.Log.e("FCM_DEBUG", "❌ Sin sesión — no se puede registrar el token")
-                return@launch
-            }
+        if (session == null) {
+            android.util.Log.e("FCM_DEBUG", "Sin sesión — no se puede registrar el token")
+            return
+        }
 
-            try {
-                android.util.Log.d("FCM_DEBUG", "3️⃣ Solicitando token a Firebase...")
-                val fcmToken = com.google.firebase.messaging.FirebaseMessaging
-                    .getInstance().token.await()
-                android.util.Log.d("FCM_DEBUG", "4️⃣ Token FCM obtenido: $fcmToken")
+        try {
+            android.util.Log.d("FCM_DEBUG", "Solicitando token a Firebase...")
+            val fcmToken = FirebaseMessaging.getInstance().token.await()
+            android.util.Log.d("FCM_DEBUG", "Token FCM obtenido: $fcmToken")
 
-                registerDeviceTokenUseCase(fcmToken)
-                    .onSuccess {
-                        android.util.Log.d("FCM_DEBUG", "✅ Token registrado en backend exitosamente")
-                    }
-                    .onFailure {
-                        android.util.Log.e("FCM_DEBUG", "❌ Falló registro en backend: ${it.message}", it)
-                    }
-
-            } catch (e: Exception) {
-                android.util.Log.e("FCM_DEBUG", "❌ Excepción obteniendo token Firebase: ${e.message}", e)
-            }
+            registerDeviceTokenUseCase(fcmToken)
+                .onSuccess {
+                    android.util.Log.d("FCM_DEBUG", "Token registrado en backend exitosamente")
+                }
+                .onFailure {
+                    android.util.Log.e("FCM_DEBUG", "Falló registro en backend: ${it.message}", it)
+                }
+        } catch (e: Exception) {
+            android.util.Log.e("FCM_DEBUG", "Excepción obteniendo token Firebase: ${e.message}", e)
         }
     }
 

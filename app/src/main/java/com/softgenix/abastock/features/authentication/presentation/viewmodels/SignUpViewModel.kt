@@ -2,6 +2,7 @@ package com.softgenix.abastock.features.authentication.presentation.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.messaging.FirebaseMessaging
 import com.softgenix.abastock.core.data.local.TokenManager
 import com.softgenix.abastock.features.authentication.domain.entities.LoginCredentials
 import com.softgenix.abastock.features.authentication.domain.entities.RegisterUser
@@ -118,7 +119,7 @@ class SignUpViewModel @Inject constructor(
             loginUseCase(credentials)
                 .onSuccess { tokens ->
                     tokenManager.saveTokens(tokens.accessToken, tokens.refreshToken)
-                    registerFcmToken()   // ← NUEVO
+                    registerFcmToken()
                     _state.update { it.copy(isLoading = false, isAuthenticated = true) }
                 }
                 .onFailure { e ->
@@ -132,16 +133,13 @@ class SignUpViewModel @Inject constructor(
         }
     }
 
-    private fun registerFcmToken() {
-        viewModelScope.launch {
-            try {
-                val fcmToken = com.google.firebase.messaging.FirebaseMessaging
-                    .getInstance().token.await()
-                registerDeviceTokenUseCase(fcmToken)
-                    .onFailure { android.util.Log.w("FCM", "Token no registrado: ${it.message}") }
-            } catch (e: Exception) {
-                android.util.Log.e("FCM", "Error FCM: ${e.message}")
-            }
+    private suspend fun registerFcmToken() {
+        try {
+            val fcmToken = FirebaseMessaging.getInstance().token.await()
+            registerDeviceTokenUseCase(fcmToken)
+                .onFailure { android.util.Log.w("FCM", "Token no registrado: ${it.message}") }
+        } catch (e: Exception) {
+            android.util.Log.e("FCM", "Error FCM: ${e.message}")
         }
     }
 

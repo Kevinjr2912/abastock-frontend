@@ -41,14 +41,14 @@ class TokenManager @Inject constructor(
         try {
             val payload = decodeJwtPayload(accessToken)
             prefs.edit()
-                .putString("user_id", payload.getString("userId"))
-                .putString("email", payload.getString("email"))
-                .putString("name", payload.getString("name"))
+                .putString("user_id", payload.getString("sub"))
+                .putString("email", payload.optString("email", ""))
+                .putString("name", payload.optString("name", ""))
                 .putString("store_id", payload.optString("storeId", null))
                 .putString("store_name", payload.optString("storeName", null))
                 .apply()
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.e("FCM_DEBUG", "Error decodificando JWT: ${e.message}", e)  // 👈 visible en logcat
         }
     }
 

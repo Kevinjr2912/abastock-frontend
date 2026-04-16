@@ -54,6 +54,11 @@ class AbastockFirebaseMessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(message: RemoteMessage) {
         super.onMessageReceived(message)
 
+        // 👇 Agrega estos logs
+        android.util.Log.d("FCM_DEBUG", "onMessageReceived() llamado!")
+        android.util.Log.d("FCM_DEBUG", "notification: title=${message.notification?.title}, body=${message.notification?.body}")
+        android.util.Log.d("FCM_DEBUG", "data: ${message.data}")
+
         val title = message.notification?.title
             ?: message.data["title"]
             ?: "Abastock"
