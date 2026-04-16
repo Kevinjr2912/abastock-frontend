@@ -6,4 +6,7 @@ plugins {
     alias(libs.plugins.jetbrainsKotlinSerialization) apply false    // Serialization
     alias(libs.plugins.hilt.android) apply false                    // Hilt
     alias(libs.plugins.devtools.ksp) apply false                    // KSP
+
+    // Firebase: Plugin de Google Services
+    alias(libs.plugins.google.services) apply false
 }

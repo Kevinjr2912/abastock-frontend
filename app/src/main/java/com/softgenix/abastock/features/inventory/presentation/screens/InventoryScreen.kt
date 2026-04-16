@@ -155,6 +155,14 @@ fun InventoryScreen(
                 ) {
                     Text("Generar PDF de reporte", color = Color.White)
                 }
+
+                Button(
+                    onClick = { viewModel.triggerPushTest() },
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF5A623))
+                ) {
+                    Text("Probar Push Notification", color = Color.White)
+                }
             }
 
             if (state.isLoading) {

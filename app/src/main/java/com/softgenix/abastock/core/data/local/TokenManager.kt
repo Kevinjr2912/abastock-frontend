@@ -52,13 +52,17 @@ class TokenManager @Inject constructor(
                 saveStoreId(backendStoreId)
             }
             prefs.edit()
+
+
+
+                .putString("store_id", payload.optString("storeId", null))
                 .putString("user_id", payload.getString("userId"))
                 .putString("email", payload.getString("email"))
                 .putString("name", payload.getString("name"))
                 .putString("store_name", payload.optString("storeName", null))
                 .apply()
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.e("FCM_DEBUG", "Error decodificando JWT: ${e.message}", e)  // 👈 visible en logcat
         }
     }
 
