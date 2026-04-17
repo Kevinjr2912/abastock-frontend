@@ -7,8 +7,8 @@ import android.content.Context
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import androidx.work.Constraints
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.softgenix.abastock.core.notifications.service.AbastockFirebaseMessagingService
 import com.softgenix.abastock.features.reporting.data.workers.PurchaseReportWorker
@@ -33,7 +33,6 @@ class AbastockApp : Application(), Configuration.Provider {
         setupDailyReport()
     }
 
-    // ── Notification channels ─────────────────────────────────────────────────
     private fun createNotificationChannels() {
         val alertsChannel = NotificationChannel(
             AbastockFirebaseMessagingService.CHANNEL_ID,
@@ -47,21 +46,21 @@ class AbastockApp : Application(), Configuration.Provider {
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         manager.createNotificationChannel(alertsChannel)
     }
-
-    // ── Trabajo periódico ─────────────────────────────────────────────────────
     private fun setupDailyReport() {
         val constraints = Constraints.Builder()
             .setRequiresBatteryNotLow(true)
             .build()
 
-        val dailyRequest = PeriodicWorkRequestBuilder<PurchaseReportWorker>(
-            1, TimeUnit.DAYS
-        ).setConstraints(constraints).build()
 
-        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
-            "PURCHASE_REPORT_DAILY",
-            ExistingPeriodicWorkPolicy.KEEP,
-            dailyRequest
+        val firstRequest = OneTimeWorkRequestBuilder<PurchaseReportWorker>()
+            .setInitialDelay(1, TimeUnit.MINUTES)
+            .setConstraints(constraints)
+            .build()
+
+        WorkManager.getInstance(this).enqueueUniqueWork(
+            "PURCHASE_REPORT_RECURSIVE",
+            ExistingWorkPolicy.KEEP,
+            firstRequest
         )
     }
 }

@@ -10,10 +10,10 @@ class CommunicationsRepositoryImpl @Inject constructor(
 ) : CommunicationsRepository {
 
     override suspend fun registerDeviceToken(userId: String, fcmToken: String): Result<Unit> {
-        android.util.Log.d("FCM_DEBUG", "5. Llamando API — userId=$userId, token=$fcmToken")
+        android.util.Log.d("FCM_DEBUG", "API — userId=$userId, token=$fcmToken")
         return try {
             val response = api.registerDeviceToken(RegisterTokenRequestDto(userId, fcmToken))
-            android.util.Log.d("FCM_DEBUG", "6. Respuesta HTTP: ${response.code()} — ${response.message()}")
+            android.util.Log.d("FCM_DEBUG", "Respuesta: ${response.code()} — ${response.message()}")
             if (response.isSuccessful) {
                 android.util.Log.d("FCM_DEBUG", "Backend confirmó el token")
                 Result.success(Unit)

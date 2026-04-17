@@ -1,12 +1,13 @@
 package com.softgenix.abastock.features.purchases.presentation.viewmodels
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.softgenix.abastock.core.data.local.TokenManager // 🔥 IMPORTANTE
 import com.softgenix.abastock.features.inventory.domain.entities.ScannedProduct
 import com.softgenix.abastock.features.inventory.domain.usecases.ScanProductUseCase
 import com.softgenix.abastock.features.purchases.domain.entities.Purchase
 import com.softgenix.abastock.features.purchases.domain.entities.PurchaseItem
-import com.softgenix.abastock.features.purchases.domain.repositories.PurchaseRepository
 import com.softgenix.abastock.features.purchases.domain.usecases.GetProductByBarcodeUseCase
 import com.softgenix.abastock.features.purchases.domain.usecases.SavePurchaseUseCase
 import com.softgenix.abastock.features.purchases.presentation.screens.PurchaseUiState
@@ -25,12 +26,11 @@ class PurchaseViewModel @Inject constructor(
     private val getProductByBarcodeUseCase: GetProductByBarcodeUseCase,
     private val savePurchaseUseCase: SavePurchaseUseCase,
     private val scanProductUseCase: ScanProductUseCase,
+    private val tokenManager: TokenManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PurchaseUiState())
     val uiState = _uiState.asStateFlow()
-    private val _cartItems = MutableStateFlow<List<PurchaseItem>>(emptyList())
-    val cartItems = _cartItems.asStateFlow()
 
     val totalPurchase: Double
         get() = _uiState.value.cartItems.sumOf { it.quantity * it.costPrice }
@@ -47,8 +47,17 @@ class PurchaseViewModel @Inject constructor(
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-
             scanProductUseCase(barcode).fold(
+                onFailure = { error ->
+                    _uiState.update { it.copy(isLoading = false) }
+
+                    val errorMsg = error.message ?: ""
+                    if (errorMsg.contains("404") || errorMsg.contains("400")) {
+                        onNotFound(barcode)
+                    } else {
+                        _uiState.update { it.copy(errorMessage = "Error de red: $errorMsg") }
+                    }
+                },
                 onSuccess = { product ->
                     _uiState.update { it.copy(isLoading = false) }
                     if (product != null) {
@@ -56,9 +65,6 @@ class PurchaseViewModel @Inject constructor(
                     } else {
                         onNotFound(barcode)
                     }
-                },
-                onFailure = { error ->
-                    _uiState.update { it.copy(isLoading = false, errorMessage = "Error de red: ${error.message}") }
                 }
             )
 
@@ -93,13 +99,14 @@ class PurchaseViewModel @Inject constructor(
             state.copy(cartItems = state.cartItems + item)
         }
     }
-
-    fun finalizePurchase(storeId: String) {
+    fun finalizePurchase() {
         viewModelScope.launch {
             val state = _uiState.value
             if (state.cartItems.isEmpty()) return@launch
 
             _uiState.update { it.copy(isLoading = true) }
+
+            val storeId = tokenManager.getStoreId()
 
             val purchase = Purchase(
                 id = UUID.randomUUID().toString(),

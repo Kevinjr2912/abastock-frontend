@@ -13,7 +13,18 @@ class AuthRepositoryImpl @Inject constructor(
     private val api: AuthApi
 ) : AuthRepository {
     override suspend fun registerUser(user: RegisterUser): Result<Unit> {
-        return api.registerUser(user)
+        return try {
+            val response = api.registerUser(user.toDto())
+
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                val errorMsg = response.errorBody()?.string() ?: "Error al registrar"
+                Result.failure(Exception("HTTP ${response.code()}: $errorMsg"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     override suspend fun login(credentials: LoginCredentials): AuthTokens {

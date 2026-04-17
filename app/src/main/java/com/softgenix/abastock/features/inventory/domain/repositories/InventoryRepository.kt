@@ -16,4 +16,5 @@ interface InventoryRepository {
     suspend fun getCategories(): Result<List<Category>>
 
     suspend fun createProduct(storeId: String, product: NewProduct): Result<Unit>
+    suspend fun createInventory(inventoryId: String, storeId: String, presentationId: String): Result<Unit>
 }

@@ -9,6 +9,7 @@ import com.softgenix.abastock.features.inventory.data.datasources.local.mapper.t
 import com.softgenix.abastock.features.inventory.data.datasources.remote.api.InventoryApi
 import com.softgenix.abastock.features.inventory.data.datasources.remote.mapper.toDomain
 import com.softgenix.abastock.features.inventory.data.datasources.remote.mapper.toDto
+import com.softgenix.abastock.features.inventory.data.datasources.remote.models.CreateInventoryDto
 import com.softgenix.abastock.features.inventory.domain.entities.InventoryItem
 import com.softgenix.abastock.features.inventory.domain.entities.NewProduct
 import com.softgenix.abastock.features.inventory.domain.repositories.InventoryRepository
@@ -121,14 +122,19 @@ class InventoryRepositoryImpl @Inject constructor(
 
             val imagePart = product.imageUri?.let { uriString ->
                 val uri = android.net.Uri.parse(uriString)
-                val file = uriToFile(context, uri) ?: return@let null
-                val requestFile = file.asRequestBody("image/*".toMediaTypeOrNull())
+                val file = uriToFile(context, uri)
+                if (file == null) {
+                    return@let null
+                }
 
-                // el name que debe coincidir con el back
+                val requestFile = file.asRequestBody("image/jpeg".toMediaTypeOrNull())
+
                 MultipartBody.Part.createFormData("image", file.name, requestFile)
             }
 
-            //agrego el missmatch porque no es multipart
+            if (imagePart == null) {
+                return Result.failure(Exception("No se pudo procesar la imagen del dispositivo. Intenta con otra foto."))
+            }
             val response = api.createProduct(dataPart, imagePart)
 
             if (response.isSuccessful) {
@@ -147,7 +153,11 @@ class InventoryRepositoryImpl @Inject constructor(
     // funcion helper para convertir un uri a file ( ACA ESTA SUCIO PERO GGS JSAJS)
     private fun uriToFile(context: Context, uri: android.net.Uri): File? {
         return try {
-            val inputStream = context.contentResolver.openInputStream(uri) ?: return null
+            val inputStream = context.contentResolver.openInputStream(uri)
+            if (inputStream == null) {
+                return null
+            }
+
             val tempFile = File.createTempFile("upload_", ".jpg", context.cacheDir)
             inputStream.use { input ->
                 tempFile.outputStream().use { output ->
@@ -157,6 +167,26 @@ class InventoryRepositoryImpl @Inject constructor(
             tempFile
         } catch (e: Exception) {
             null
+        }
+    }
+    // nueva funcion de la new api con nest
+    override suspend fun createInventory(inventoryId: String, storeId: String, presentationId: String): Result<Unit> {
+        return try {
+            val request = CreateInventoryDto(
+                inventoryId = inventoryId,
+                storeId = storeId,
+                presentationId = presentationId
+            )
+            val response = api.createInventory(request)
+
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                val errorBody = response.errorBody()?.string() ?: "Error al vincular inventario"
+                Result.failure(Exception(errorBody))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 }

@@ -12,6 +12,7 @@ class TokenManager @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
     private val prefs = context.getSharedPreferences("auth", Context.MODE_PRIVATE)
+    private val TEMPORARY_STORE_ID = "6b5c757d-68b5-4ec3-b47a-8e1cb8bd9ae8"
 
     fun saveTokens(accessToken: String, refreshToken: String) {
         prefs.edit()
@@ -24,13 +25,21 @@ class TokenManager @Inject constructor(
     fun getAccessToken(): String? = prefs.getString("access_token", null)
     fun getRefreshToken(): String? = prefs.getString("refresh_token", null)
 
+    fun getStoreId(): String {
+        return prefs.getString("GLOBAL_STORE_ID", TEMPORARY_STORE_ID) ?: TEMPORARY_STORE_ID
+    }
+
+    fun saveStoreId(storeId: String) {
+        prefs.edit().putString("GLOBAL_STORE_ID", storeId).apply()
+    }
+
     fun getSession(): UserSession? {
         val userId = prefs.getString("user_id", null) ?: return null
         return UserSession(
             userId = userId,
             email = prefs.getString("email", "") ?: "",
             name = prefs.getString("name", "") ?: "",
-            storeId = prefs.getString("store_id", null),
+            storeId = getStoreId(),
             storeName = prefs.getString("store_name", null)
         )
     }
@@ -40,15 +49,25 @@ class TokenManager @Inject constructor(
     private fun decodeAndSaveSession(accessToken: String) {
         try {
             val payload = decodeJwtPayload(accessToken)
+            val backendStoreId = payload.optString("storeId", "")
+            if (backendStoreId.isNotEmpty()) {
+                saveStoreId(backendStoreId)
+            }
+
+            val extractedUserId = payload.optString("userId", payload.optString("sub", payload.optString("id", "")))
+
             prefs.edit()
-                .putString("user_id", payload.getString("sub"))
+                .putString("store_id", payload.optString("storeId", null))
+                .putString("user_id", extractedUserId)
                 .putString("email", payload.optString("email", ""))
                 .putString("name", payload.optString("name", ""))
-                .putString("store_id", payload.optString("storeId", null))
                 .putString("store_name", payload.optString("storeName", null))
                 .apply()
+
+            android.util.Log.d("FCM_DEBUG", "JWT decodificado con éxito. UserId: $extractedUserId")
+
         } catch (e: Exception) {
-            android.util.Log.e("FCM_DEBUG", "Error decodificando JWT: ${e.message}", e)  // 👈 visible en logcat
+            android.util.Log.e("FCM_DEBUG", "Error decodificando JWT: ${e.message}", e)
         }
     }
 

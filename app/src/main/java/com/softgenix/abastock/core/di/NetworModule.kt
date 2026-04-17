@@ -16,7 +16,7 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    private const val BASE_URL = "http://172.20.10.2:3000/api/v1/"
+    private const val BASE_URL = "http://172.20.10.7:3000/api/v1/"
 
     // Sin interceptor (solo para auth y refresh)
     @Provides

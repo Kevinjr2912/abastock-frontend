@@ -26,7 +26,6 @@ class AbastockFirebaseMessagingService : FirebaseMessagingService() {
     @Inject lateinit var tokenManager: TokenManager
     @Inject lateinit var communicationsRepository: CommunicationsRepository
 
-    // Scope propio del Service: se cancela cuando el Service muere
     private val serviceJob = SupervisorJob()
     private val serviceScope = CoroutineScope(Dispatchers.IO + serviceJob)
 
@@ -35,13 +34,12 @@ class AbastockFirebaseMessagingService : FirebaseMessagingService() {
         private const val NOTIFICATION_ID = 1001
     }
 
-    // ─── Token lifecycle ──────────────────────────────────────────────────────
+    // Token lifecycle
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
         fcmTokenManager.saveToken(token)
 
-        // Enviar al backend sólo si hay sesión activa
         val session = tokenManager.getSession() ?: return
         serviceScope.launch {
             communicationsRepository.registerDeviceToken(session.userId, token)
@@ -49,12 +47,10 @@ class AbastockFirebaseMessagingService : FirebaseMessagingService() {
         }
     }
 
-    // ─── Message received (app en foreground) ─────────────────────────────────
+    // Message received (app en foreground)
 
     override fun onMessageReceived(message: RemoteMessage) {
         super.onMessageReceived(message)
-
-        // 👇 Agrega estos logs
         android.util.Log.d("FCM_DEBUG", "onMessageReceived() llamado!")
         android.util.Log.d("FCM_DEBUG", "notification: title=${message.notification?.title}, body=${message.notification?.body}")
         android.util.Log.d("FCM_DEBUG", "data: ${message.data}")
@@ -69,7 +65,7 @@ class AbastockFirebaseMessagingService : FirebaseMessagingService() {
         showNotification(title, body)
     }
 
-    // ─── Notification builder ─────────────────────────────────────────────────
+    // Notification builder
 
     private fun showNotification(title: String, body: String) {
         val intent = Intent(this, MainActivity::class.java).apply {
@@ -82,7 +78,7 @@ class AbastockFirebaseMessagingService : FirebaseMessagingService() {
         )
 
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_inventory)   // ícono existente en el proyecto
+            .setSmallIcon(R.drawable.ic_inventory)
             .setContentTitle(title)
             .setContentText(body)
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))
