@@ -76,9 +76,13 @@ class PurchaseReportWorker(
 
     private fun createPdfReport(purchases: List<LocalPurchaseEntity>): File {
         val pdfDocument = PdfDocument()
-        val pageInfo = PdfDocument.PageInfo.Builder(420, 700, 1).create()
-        val page = pdfDocument.startPage(pageInfo)
-        val canvas: Canvas = page.canvas
+        val pageHeight = 700
+        val pageWidth = 420
+        var pageNumber = 1
+
+        var pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNumber).create()
+        var page = pdfDocument.startPage(pageInfo)
+        var canvas: Canvas = page.canvas
 
         val titlePaint = Paint().apply {
             textSize = 16f
@@ -99,28 +103,45 @@ class PurchaseReportWorker(
             strokeWidth = 1f
         }
 
-        canvas.drawText("REPORTE SEMANAL DE COMPRAS", 20f, 40f, titlePaint)
-        canvas.drawText("Abastock App - Control de Inventario", 20f, 60f, textPaint)
-        canvas.drawLine(20f, 75f, 400f, 75f, linePaint)
+        fun drawHeaders() {
+            canvas.drawText(if (pageNumber == 1) "REPORTE SEMANAL DE COMPRAS" else "REPORTE DE COMPRAS (Cont.)", 20f, 40f, titlePaint)
+            if (pageNumber == 1) canvas.drawText("Abastock App - Control de Inventario", 20f, 60f, textPaint)
+            canvas.drawLine(20f, 75f, 400f, 75f, linePaint)
 
-        var yPos = 100f
-        canvas.drawText("FECHA", 20f, yPos, headerPaint)
-        canvas.drawText("PRODUCTOS", 120f, yPos, headerPaint)
-        canvas.drawText("TOTAL", 340f, yPos, headerPaint)
+            canvas.drawText("FECHA", 20f, 100f, headerPaint)
+            canvas.drawText("PRODUCTOS", 120f, 100f, headerPaint)
+            canvas.drawText("TOTAL", 340f, 100f, headerPaint)
+            canvas.drawLine(20f, 115f, 400f, 115f, linePaint)
+        }
 
-        yPos += 15f
-        canvas.drawLine(20f, yPos, 400f, yPos, linePaint)
-        yPos += 20f
-
+        drawHeaders()
+        var yPos = 135f
         var grandTotal = 0.0
+        val limitY = 620f
 
         purchases.forEach { purchase ->
+            val productos = purchase.itemsSummary.split(", ")
+
+            val estimatedHeight = 20f + (productos.size * 15f) + 10f
+
+            if (yPos + estimatedHeight > limitY) {
+
+                pdfDocument.finishPage(page)
+
+                pageNumber++
+                pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNumber).create()
+                page = pdfDocument.startPage(pageInfo)
+                canvas = page.canvas
+
+                drawHeaders()
+                yPos = 135f
+            }
+
             val cleanDate = purchase.date.substringBefore("T")
             canvas.drawText(cleanDate, 20f, yPos, textPaint)
             canvas.drawText("$${String.format("%.2f", purchase.totalCost)}", 340f, yPos, textPaint)
-            val productos = purchase.itemsSummary.split(", ")
-            var productY = yPos
 
+            var productY = yPos
             productos.forEach { producto ->
                 canvas.drawText("• $producto", 120f, productY, textPaint)
                 productY += 15f
@@ -129,11 +150,21 @@ class PurchaseReportWorker(
             grandTotal += purchase.totalCost
 
             yPos = productY + 10f
-            canvas.drawLine(20f, yPos, 400f, yPos, linePaint) // Raya separadora sutil
+            canvas.drawLine(20f, yPos, 400f, yPos, linePaint)
             yPos += 20f
         }
 
-        yPos += 10f
+        if (yPos + 30f > limitY) {
+            pdfDocument.finishPage(page)
+            pageNumber++
+            pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNumber).create()
+            page = pdfDocument.startPage(pageInfo)
+            canvas = page.canvas
+            yPos = 60f
+        } else {
+            yPos += 10f
+        }
+
         titlePaint.textSize = 14f
         canvas.drawText("TOTAL INVERTIDO: $${String.format("%.2f", grandTotal)}", 190f, yPos, titlePaint)
 

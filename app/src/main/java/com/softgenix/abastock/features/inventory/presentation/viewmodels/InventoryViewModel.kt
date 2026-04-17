@@ -48,7 +48,7 @@ class InventoryViewModel @Inject constructor(
     fun triggerPushTest() {
         viewModelScope.launch {
             triggerTestSummaryUseCase()
-                .onSuccess { android.util.Log.d("FCM_TEST", "Push enviado por el backend ✅") }
+                .onSuccess { android.util.Log.d("FCM_TEST", "Push enviado por el backend ") }
                 .onFailure { android.util.Log.e("FCM_TEST", "Error: ${it.message}") }
         }
     }
